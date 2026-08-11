@@ -20,6 +20,10 @@
 
     <properties>
         <java.version>17</java.version>
+        <!-- JaCoCo exec file location. Override with -Djacoco.execFile=/path if the default
+             target/ directory is on a filesystem that does not support POSIX file locking
+             (e.g. some NFS or overlay mounts). -->
+        <jacoco.execFile>${project.build.directory}/jacoco.exec</jacoco.execFile>
     </properties>
 
     <dependencies>
@@ -81,6 +85,9 @@
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>
+                        <configuration>
+                            <destFile>${jacoco.execFile}</destFile>
+                        </configuration>
                     </execution>
                     <execution>
                         <id>report</id>
@@ -88,6 +95,9 @@
                         <goals>
                             <goal>report</goal>
                         </goals>
+                        <configuration>
+                            <dataFile>${jacoco.execFile}</dataFile>
+                        </configuration>
                     </execution>
                     <execution>
                         <id>check</id>
@@ -96,6 +106,7 @@
                             <goal>check</goal>
                         </goals>
                         <configuration>
+                            <dataFile>${jacoco.execFile}</dataFile>
                             <rules>
                                 <rule>
                                     <element>PACKAGE</element>

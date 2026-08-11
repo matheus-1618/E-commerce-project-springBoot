@@ -30,7 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * </ul>
  */
 @WebMvcTest(controllers = GlobalExceptionHandlerTest.StubController.class)
-@Import(GlobalExceptionHandler.class)
+@Import({GlobalExceptionHandler.class, GlobalExceptionHandlerTest.StubController.class})
 @DisplayName("GlobalExceptionHandler")
 class GlobalExceptionHandlerTest {
 
