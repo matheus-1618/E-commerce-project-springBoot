@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CategoryController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">catalog-service</a> &gt; <a href="index.source.html" class="el_package">com.ecommerce.catalogservice.controller</a> &gt; <span class="el_source">CategoryController.java</span></div><h1>CategoryController.java</h1><pre class="source lang-java linenums">package com.ecommerce.catalogservice.controller;
+
+import com.ecommerce.catalogservice.dto.CategoryDto;
+import com.ecommerce.catalogservice.dto.CreateCategoryRequest;
+import com.ecommerce.catalogservice.dto.UpdateCategoryRequest;
+import com.ecommerce.catalogservice.service.CategoryService;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+/**
+ * REST controller for category operations.
+ *
+ * &lt;p&gt;This controller delegates all business logic to {@link CategoryService} and
+ * does NOT catch exceptions or produce error responses directly — all error
+ * handling is the responsibility of {@link com.ecommerce.catalogservice.exception.GlobalExceptionHandler}
+ * (req-global-exception-handler).
+ */
+@RestController
+@RequestMapping(&quot;/api/categories&quot;)
+public class CategoryController {
+
+    private final CategoryService categoryService;
+
+<span class="fc" id="L28">    public CategoryController(CategoryService categoryService) {</span>
+<span class="fc" id="L29">        this.categoryService = categoryService;</span>
+<span class="fc" id="L30">    }</span>
+
+    /** GET /api/categories — list all categories. */
+    @GetMapping
+    public ResponseEntity&lt;List&lt;CategoryDto&gt;&gt; getAllCategories() {
+<span class="fc" id="L35">        return ResponseEntity.ok(categoryService.findAll());</span>
+    }
+
+    /** GET /api/categories/{id} — get one category (404 if not found). */
+    @GetMapping(&quot;/{id}&quot;)
+    public ResponseEntity&lt;CategoryDto&gt; getCategoryById(@PathVariable Long id) {
+<span class="fc" id="L41">        return ResponseEntity.ok(categoryService.findById(id));</span>
+    }
+
+    /** POST /api/categories — create a new category (201 on success). */
+    @PostMapping
+    public ResponseEntity&lt;CategoryDto&gt; createCategory(
+            @Valid @RequestBody CreateCategoryRequest request) {
+<span class="fc" id="L48">        CategoryDto created = categoryService.create(request);</span>
+<span class="fc" id="L49">        return ResponseEntity.status(HttpStatus.CREATED).body(created);</span>
+    }
+
+    /** PUT /api/categories/{id} — update an existing category. */
+    @PutMapping(&quot;/{id}&quot;)
+    public ResponseEntity&lt;CategoryDto&gt; updateCategory(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateCategoryRequest request) {
+<span class="fc" id="L57">        return ResponseEntity.ok(categoryService.update(id, request));</span>
+    }
+
+    /** DELETE /api/categories/{id} — delete a category (204 on success). */
+    @DeleteMapping(&quot;/{id}&quot;)
+    public ResponseEntity&lt;Void&gt; deleteCategory(@PathVariable Long id) {
+<span class="fc" id="L63">        categoryService.delete(id);</span>
+<span class="fc" id="L64">        return ResponseEntity.noContent().build();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

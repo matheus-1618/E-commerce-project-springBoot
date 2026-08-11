@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GlobalExceptionHandler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">catalog-service</a> &gt; <a href="index.source.html" class="el_package">com.ecommerce.catalogservice.exception</a> &gt; <span class="el_source">GlobalExceptionHandler.java</span></div><h1>GlobalExceptionHandler.java</h1><pre class="source lang-java linenums">package com.ecommerce.catalogservice.exception;
+
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import java.util.stream.Collectors;
+
+/**
+ * Centralized exception handler for catalog-service.
+ *
+ * &lt;p&gt;All HTTP error response production is the sole responsibility of this class;
+ * no controller or service class may catch exceptions and produce error responses
+ * directly (req-global-exception-handler).
+ *
+ * &lt;p&gt;Every handler method returns a uniform {@link ErrorResponse} JSON body
+ * (req-uniform-error-body) with the five fields: timestamp, status, error,
+ * message, path.
+ *
+ * &lt;p&gt;Mapping table:
+ * &lt;ul&gt;
+ *   &lt;li&gt;{@link ProductNotFoundException}, {@link CategoryNotFoundException} → 404 (req-404-mapping)&lt;/li&gt;
+ *   &lt;li&gt;{@link CatalogValidationException}, {@link MethodArgumentNotValidException} → 400 (req-400-mapping)&lt;/li&gt;
+ *   &lt;li&gt;{@link CatalogConflictException} → 409 (req-409-mapping)&lt;/li&gt;
+ *   &lt;li&gt;{@link Exception} catch-all → 500 (req-500-mapping)&lt;/li&gt;
+ * &lt;/ul&gt;
+ */
+@RestControllerAdvice
+<span class="fc" id="L33">public class GlobalExceptionHandler {</span>
+
+    // -------------------------------------------------------------------------
+    // 404 — Not Found
+    // -------------------------------------------------------------------------
+
+    /**
+     * Handles {@link ProductNotFoundException} (req-404-mapping).
+     * Returns HTTP 404 with the uniform error envelope.
+     */
+    @ExceptionHandler(ProductNotFoundException.class)
+    public ResponseEntity&lt;ErrorResponse&gt; handleProductNotFound(
+            ProductNotFoundException ex,
+            HttpServletRequest request) {
+
+<span class="fc" id="L48">        ErrorResponse body = ErrorResponse.of(</span>
+<span class="fc" id="L49">                HttpStatus.NOT_FOUND.value(),</span>
+<span class="fc" id="L50">                HttpStatus.NOT_FOUND.getReasonPhrase(),</span>
+<span class="fc" id="L51">                ex.getMessage(),</span>
+<span class="fc" id="L52">                request.getRequestURI());</span>
+<span class="fc" id="L53">        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);</span>
+    }
+
+    /**
+     * Handles {@link CategoryNotFoundException} (req-404-mapping).
+     * Returns HTTP 404 with the uniform error envelope.
+     */
+    @ExceptionHandler(CategoryNotFoundException.class)
+    public ResponseEntity&lt;ErrorResponse&gt; handleCategoryNotFound(
+            CategoryNotFoundException ex,
+            HttpServletRequest request) {
+
+<span class="fc" id="L65">        ErrorResponse body = ErrorResponse.of(</span>
+<span class="fc" id="L66">                HttpStatus.NOT_FOUND.value(),</span>
+<span class="fc" id="L67">                HttpStatus.NOT_FOUND.getReasonPhrase(),</span>
+<span class="fc" id="L68">                ex.getMessage(),</span>
+<span class="fc" id="L69">                request.getRequestURI());</span>
+<span class="fc" id="L70">        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);</span>
+    }
+
+    // -------------------------------------------------------------------------
+    // 400 — Bad Request
+    // -------------------------------------------------------------------------
+
+    /**
+     * Handles {@link CatalogValidationException} — business-rule violations
+     * that pass Bean Validation but fail domain logic (req-400-mapping).
+     * Returns HTTP 400 with the uniform error envelope.
+     */
+    @ExceptionHandler(CatalogValidationException.class)
+    public ResponseEntity&lt;ErrorResponse&gt; handleCatalogValidation(
+            CatalogValidationException ex,
+            HttpServletRequest request) {
+
+<span class="fc" id="L87">        ErrorResponse body = ErrorResponse.of(</span>
+<span class="fc" id="L88">                HttpStatus.BAD_REQUEST.value(),</span>
+<span class="fc" id="L89">                HttpStatus.BAD_REQUEST.getReasonPhrase(),</span>
+<span class="fc" id="L90">                ex.getMessage(),</span>
+<span class="fc" id="L91">                request.getRequestURI());</span>
+<span class="fc" id="L92">        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);</span>
+    }
+
+    /**
+     * Handles {@link MethodArgumentNotValidException} — Jakarta Bean Validation
+     * failures on @RequestBody DTOs (req-400-mapping).
+     * Returns HTTP 400; the message field aggregates all field-level constraint
+     * violations for human-readable detail.
+     */
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity&lt;ErrorResponse&gt; handleMethodArgumentNotValid(
+            MethodArgumentNotValidException ex,
+            HttpServletRequest request) {
+
+<span class="fc" id="L106">        String message = ex.getBindingResult().getFieldErrors().stream()</span>
+<span class="fc" id="L107">                .map(FieldError::getDefaultMessage)</span>
+<span class="fc" id="L108">                .collect(Collectors.joining(&quot;; &quot;));</span>
+
+<span class="fc" id="L110">        ErrorResponse body = ErrorResponse.of(</span>
+<span class="fc" id="L111">                HttpStatus.BAD_REQUEST.value(),</span>
+<span class="fc" id="L112">                HttpStatus.BAD_REQUEST.getReasonPhrase(),</span>
+<span class="pc bpc" id="L113" title="1 of 2 branches missed.">                message.isEmpty() ? &quot;Validation failed&quot; : message,</span>
+<span class="fc" id="L114">                request.getRequestURI());</span>
+<span class="fc" id="L115">        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);</span>
+    }
+
+    // -------------------------------------------------------------------------
+    // 409 — Conflict
+    // -------------------------------------------------------------------------
+
+    /**
+     * Handles {@link CatalogConflictException} — duplicate-entity conflicts
+     * (req-409-mapping).
+     * Returns HTTP 409 with the uniform error envelope.
+     */
+    @ExceptionHandler(CatalogConflictException.class)
+    public ResponseEntity&lt;ErrorResponse&gt; handleCatalogConflict(
+            CatalogConflictException ex,
+            HttpServletRequest request) {
+
+<span class="fc" id="L132">        ErrorResponse body = ErrorResponse.of(</span>
+<span class="fc" id="L133">                HttpStatus.CONFLICT.value(),</span>
+<span class="fc" id="L134">                HttpStatus.CONFLICT.getReasonPhrase(),</span>
+<span class="fc" id="L135">                ex.getMessage(),</span>
+<span class="fc" id="L136">                request.getRequestURI());</span>
+<span class="fc" id="L137">        return ResponseEntity.status(HttpStatus.CONFLICT).body(body);</span>
+    }
+
+    // -------------------------------------------------------------------------
+    // 500 — Internal Server Error (catch-all)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Catch-all handler for any unhandled {@link Exception} (req-500-mapping).
+     * Returns HTTP 500; the raw exception message is used but stack trace is
+     * never exposed in the response body.
+     */
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity&lt;ErrorResponse&gt; handleGenericException(
+            Exception ex,
+            HttpServletRequest request) {
+
+<span class="fc" id="L154">        ErrorResponse body = ErrorResponse.of(</span>
+<span class="fc" id="L155">                HttpStatus.INTERNAL_SERVER_ERROR.value(),</span>
+<span class="fc" id="L156">                HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(),</span>
+                &quot;An unexpected error occurred&quot;,
+<span class="fc" id="L158">                request.getRequestURI());</span>
+<span class="fc" id="L159">        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

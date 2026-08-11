@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CategoryService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">catalog-service</a> &gt; <a href="index.source.html" class="el_package">com.ecommerce.catalogservice.service</a> &gt; <span class="el_source">CategoryService.java</span></div><h1>CategoryService.java</h1><pre class="source lang-java linenums">package com.ecommerce.catalogservice.service;
+
+import com.ecommerce.catalogservice.dto.CategoryDto;
+import com.ecommerce.catalogservice.dto.CreateCategoryRequest;
+import com.ecommerce.catalogservice.dto.UpdateCategoryRequest;
+import com.ecommerce.catalogservice.exception.CatalogConflictException;
+import com.ecommerce.catalogservice.exception.CategoryNotFoundException;
+import com.ecommerce.catalogservice.model.Category;
+import com.ecommerce.catalogservice.repository.CategoryRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+/**
+ * Business logic for category operations.
+ *
+ * &lt;p&gt;This class communicates failures via typed domain exceptions:
+ * &lt;ul&gt;
+ *   &lt;li&gt;{@link CategoryNotFoundException} — category ID not found (→ 404)&lt;/li&gt;
+ *   &lt;li&gt;{@link CatalogConflictException} — duplicate category name (→ 409)&lt;/li&gt;
+ * &lt;/ul&gt;
+ *
+ * &lt;p&gt;No exception is swallowed. Successful-response contracts (2xx shapes) are
+ * unchanged by error-handling intent (req-no-successful-response-change).
+ */
+@Service
+@Transactional(readOnly = true)
+public class CategoryService {
+
+    private final CategoryRepository categoryRepository;
+
+<span class="fc" id="L33">    public CategoryService(CategoryRepository categoryRepository) {</span>
+<span class="fc" id="L34">        this.categoryRepository = categoryRepository;</span>
+<span class="fc" id="L35">    }</span>
+
+    /** Returns all categories. */
+    public List&lt;CategoryDto&gt; findAll() {
+<span class="fc" id="L39">        return categoryRepository.findAll().stream()</span>
+<span class="fc" id="L40">                .map(this::toDto)</span>
+<span class="fc" id="L41">                .toList();</span>
+    }
+
+    /** Returns one category by id or throws {@link CategoryNotFoundException}. */
+    public CategoryDto findById(Long id) {
+<span class="fc" id="L46">        Category category = categoryRepository.findById(id)</span>
+<span class="fc" id="L47">                .orElseThrow(() -&gt; new CategoryNotFoundException(id));</span>
+<span class="fc" id="L48">        return toDto(category);</span>
+    }
+
+    /** Creates a category; throws {@link CatalogConflictException} on duplicate name. */
+    @Transactional
+    public CategoryDto create(CreateCategoryRequest request) {
+<span class="fc bfc" id="L54" title="All 2 branches covered.">        if (categoryRepository.findByName(request.name()).isPresent()) {</span>
+<span class="fc" id="L55">            throw new CatalogConflictException(</span>
+<span class="fc" id="L56">                    &quot;Category with name '&quot; + request.name() + &quot;' already exists&quot;);</span>
+        }
+<span class="fc" id="L58">        Category saved = categoryRepository.save(new Category(request.name()));</span>
+<span class="fc" id="L59">        return toDto(saved);</span>
+    }
+
+    /** Updates a category; throws {@link CategoryNotFoundException} or {@link CatalogConflictException}. */
+    @Transactional
+    public CategoryDto update(Long id, UpdateCategoryRequest request) {
+<span class="fc" id="L65">        Category category = categoryRepository.findById(id)</span>
+<span class="fc" id="L66">                .orElseThrow(() -&gt; new CategoryNotFoundException(id));</span>
+
+        // Conflict check: another category already owns this name
+<span class="fc" id="L69">        categoryRepository.findByName(request.name())</span>
+<span class="pc bpc" id="L70" title="1 of 2 branches missed.">                .filter(existing -&gt; !existing.getId().equals(id))</span>
+<span class="fc" id="L71">                .ifPresent(existing -&gt; {</span>
+<span class="fc" id="L72">                    throw new CatalogConflictException(</span>
+<span class="fc" id="L73">                            &quot;Category with name '&quot; + request.name() + &quot;' already exists&quot;);</span>
+                });
+
+<span class="fc" id="L76">        category.setName(request.name());</span>
+<span class="fc" id="L77">        return toDto(categoryRepository.save(category));</span>
+    }
+
+    /** Deletes a category; throws {@link CategoryNotFoundException} if id does not exist. */
+    @Transactional
+    public void delete(Long id) {
+<span class="fc bfc" id="L83" title="All 2 branches covered.">        if (!categoryRepository.existsById(id)) {</span>
+<span class="fc" id="L84">            throw new CategoryNotFoundException(id);</span>
+        }
+<span class="fc" id="L86">        categoryRepository.deleteById(id);</span>
+<span class="fc" id="L87">    }</span>
+
+    // -------------------------------------------------------------------------
+    // Mapping
+    // -------------------------------------------------------------------------
+
+    private CategoryDto toDto(Category category) {
+<span class="fc" id="L94">        return new CategoryDto(category.getId(), category.getName());</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

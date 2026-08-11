@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ErrorResponse.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">catalog-service</a> &gt; <a href="index.source.html" class="el_package">com.ecommerce.catalogservice.exception</a> &gt; <span class="el_source">ErrorResponse.java</span></div><h1>ErrorResponse.java</h1><pre class="source lang-java linenums">package com.ecommerce.catalogservice.exception;
+
+import java.time.LocalDateTime;
+
+/**
+ * Uniform JSON error envelope returned for every non-2xx response from
+ * catalog-service. Serialized by Jackson; the five fields map directly to the
+ * contract mandated by req-uniform-error-body.
+ *
+ * &lt;pre&gt;
+ * {
+ *   &quot;timestamp&quot;: &quot;2026-08-11T19:00:00&quot;,
+ *   &quot;status&quot;: 404,
+ *   &quot;error&quot;: &quot;Not Found&quot;,
+ *   &quot;message&quot;: &quot;Product not found with id: 99&quot;,
+ *   &quot;path&quot;: &quot;/api/products/99&quot;
+ * }
+ * &lt;/pre&gt;
+ */
+<span class="fc" id="L20">public record ErrorResponse(</span>
+        LocalDateTime timestamp,
+        int status,
+        String error,
+        String message,
+        String path
+) {
+
+    /**
+     * Convenience factory — sets timestamp to now.
+     */
+    public static ErrorResponse of(int status, String error, String message, String path) {
+<span class="fc" id="L32">        return new ErrorResponse(LocalDateTime.now(), status, error, message, path);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

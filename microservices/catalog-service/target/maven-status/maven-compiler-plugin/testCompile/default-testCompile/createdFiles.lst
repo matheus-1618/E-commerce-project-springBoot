@@ -1,0 +1,6 @@
+com/ecommerce/catalogservice/controller/CategoryControllerTest.class
+com/ecommerce/catalogservice/controller/ProductControllerTest.class
+com/ecommerce/catalogservice/service/ProductServiceTest.class
+com/ecommerce/catalogservice/exception/GlobalExceptionHandlerTest.class
+com/ecommerce/catalogservice/exception/GlobalExceptionHandlerTest$StubController.class
+com/ecommerce/catalogservice/service/CategoryServiceTest.class

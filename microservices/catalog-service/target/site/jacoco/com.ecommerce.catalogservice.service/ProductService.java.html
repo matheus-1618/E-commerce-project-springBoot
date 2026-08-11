@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ProductService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">catalog-service</a> &gt; <a href="index.source.html" class="el_package">com.ecommerce.catalogservice.service</a> &gt; <span class="el_source">ProductService.java</span></div><h1>ProductService.java</h1><pre class="source lang-java linenums">package com.ecommerce.catalogservice.service;
+
+import com.ecommerce.catalogservice.dto.CreateProductRequest;
+import com.ecommerce.catalogservice.dto.ProductDto;
+import com.ecommerce.catalogservice.dto.UpdateProductRequest;
+import com.ecommerce.catalogservice.exception.CategoryNotFoundException;
+import com.ecommerce.catalogservice.exception.ProductNotFoundException;
+import com.ecommerce.catalogservice.model.Category;
+import com.ecommerce.catalogservice.model.Product;
+import com.ecommerce.catalogservice.repository.CategoryRepository;
+import com.ecommerce.catalogservice.repository.ProductRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+/**
+ * Business logic for product operations.
+ *
+ * &lt;p&gt;This class communicates failures via typed domain exceptions:
+ * &lt;ul&gt;
+ *   &lt;li&gt;{@link ProductNotFoundException} — product ID not found (→ 404)&lt;/li&gt;
+ *   &lt;li&gt;{@link CategoryNotFoundException} — referenced category ID not found (→ 404)&lt;/li&gt;
+ * &lt;/ul&gt;
+ *
+ * &lt;p&gt;No exception is swallowed. Successful-response contracts (2xx shapes) are
+ * unchanged by error-handling intent (req-no-successful-response-change).
+ */
+@Service
+@Transactional(readOnly = true)
+public class ProductService {
+
+    private final ProductRepository productRepository;
+    private final CategoryRepository categoryRepository;
+
+    public ProductService(ProductRepository productRepository,
+<span class="fc" id="L37">                          CategoryRepository categoryRepository) {</span>
+<span class="fc" id="L38">        this.productRepository = productRepository;</span>
+<span class="fc" id="L39">        this.categoryRepository = categoryRepository;</span>
+<span class="fc" id="L40">    }</span>
+
+    /** Returns all products. */
+    public List&lt;ProductDto&gt; findAll() {
+<span class="fc" id="L44">        return productRepository.findAll().stream()</span>
+<span class="fc" id="L45">                .map(this::toDto)</span>
+<span class="fc" id="L46">                .toList();</span>
+    }
+
+    /** Returns one product by id or throws {@link ProductNotFoundException}. */
+    public ProductDto findById(Long id) {
+<span class="fc" id="L51">        Product product = productRepository.findById(id)</span>
+<span class="fc" id="L52">                .orElseThrow(() -&gt; new ProductNotFoundException(id));</span>
+<span class="fc" id="L53">        return toDto(product);</span>
+    }
+
+    /**
+     * Creates a product.
+     * Throws {@link CategoryNotFoundException} if the referenced category does not exist.
+     */
+    @Transactional
+    public ProductDto create(CreateProductRequest request) {
+<span class="fc" id="L62">        Category category = categoryRepository.findById(request.categoryId())</span>
+<span class="fc" id="L63">                .orElseThrow(() -&gt; new CategoryNotFoundException(request.categoryId()));</span>
+
+<span class="fc" id="L65">        Product product = new Product(</span>
+<span class="fc" id="L66">                request.name(),</span>
+<span class="fc" id="L67">                request.image(),</span>
+                category,
+<span class="fc" id="L69">                request.quantity(),</span>
+<span class="fc" id="L70">                request.price(),</span>
+<span class="fc" id="L71">                request.weight(),</span>
+<span class="fc" id="L72">                request.description());</span>
+
+<span class="fc" id="L74">        return toDto(productRepository.save(product));</span>
+    }
+
+    /**
+     * Updates a product.
+     * Throws {@link ProductNotFoundException} or {@link CategoryNotFoundException}.
+     */
+    @Transactional
+    public ProductDto update(Long id, UpdateProductRequest request) {
+<span class="fc" id="L83">        Product product = productRepository.findById(id)</span>
+<span class="fc" id="L84">                .orElseThrow(() -&gt; new ProductNotFoundException(id));</span>
+
+<span class="fc" id="L86">        Category category = categoryRepository.findById(request.categoryId())</span>
+<span class="fc" id="L87">                .orElseThrow(() -&gt; new CategoryNotFoundException(request.categoryId()));</span>
+
+<span class="fc" id="L89">        product.setName(request.name());</span>
+<span class="fc" id="L90">        product.setImage(request.image());</span>
+<span class="fc" id="L91">        product.setCategory(category);</span>
+<span class="fc" id="L92">        product.setQuantity(request.quantity());</span>
+<span class="fc" id="L93">        product.setPrice(request.price());</span>
+<span class="fc" id="L94">        product.setWeight(request.weight());</span>
+<span class="fc" id="L95">        product.setDescription(request.description());</span>
+
+<span class="fc" id="L97">        return toDto(productRepository.save(product));</span>
+    }
+
+    /** Deletes a product; throws {@link ProductNotFoundException} if id does not exist. */
+    @Transactional
+    public void delete(Long id) {
+<span class="fc bfc" id="L103" title="All 2 branches covered.">        if (!productRepository.existsById(id)) {</span>
+<span class="fc" id="L104">            throw new ProductNotFoundException(id);</span>
+        }
+<span class="fc" id="L106">        productRepository.deleteById(id);</span>
+<span class="fc" id="L107">    }</span>
+
+    // -------------------------------------------------------------------------
+    // Mapping
+    // -------------------------------------------------------------------------
+
+    private ProductDto toDto(Product product) {
+<span class="fc" id="L114">        return new ProductDto(</span>
+<span class="fc" id="L115">                product.getId(),</span>
+<span class="fc" id="L116">                product.getName(),</span>
+<span class="fc" id="L117">                product.getImage(),</span>
+<span class="fc" id="L118">                product.getCategory().getId(),</span>
+<span class="fc" id="L119">                product.getCategory().getName(),</span>
+<span class="fc" id="L120">                product.getQuantity(),</span>
+<span class="fc" id="L121">                product.getPrice(),</span>
+<span class="fc" id="L122">                product.getWeight(),</span>
+<span class="fc" id="L123">                product.getDescription());</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

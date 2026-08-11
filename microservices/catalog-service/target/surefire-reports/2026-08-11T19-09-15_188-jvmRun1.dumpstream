@@ -1,0 +1,27 @@
+# Created at 2026-08-11T19:09:15.813
+Corrupted channel by directly writing to native stream in forked JVM 1. Stream 'FATAL ERROR in native method: processing of -javaagent failed, processJavaStart failed'.
+
+# Created at 2026-08-11T19:09:15.814
+Corrupted channel by directly writing to native stream in forked JVM 1. Stream 'Native frames: (J=compiled Java code, j=interpreted, Vv=VM code, C=native code)'.
+
+# Created at 2026-08-11T19:09:15.818
+Corrupted channel by directly writing to native stream in forked JVM 1. Stream 'V  [libjvm.so+0x85ec28]  jni_FatalError+0xa8'.
+
+# Created at 2026-08-11T19:09:15.825
+Corrupted channel by directly writing to native stream in forked JVM 1. Stream 'V  [libjvm.so+0x9b0008]  JvmtiExport::post_vm_initialized()+0x148'.
+
+# Created at 2026-08-11T19:09:15.827
+Corrupted channel by directly writing to native stream in forked JVM 1. Stream 'V  [libjvm.so+0xd90294]  Threads::create_vm(JavaVMInitArgs*, bool*)+0x734'.
+
+# Created at 2026-08-11T19:09:15.832
+Corrupted channel by directly writing to native stream in forked JVM 1. Stream 'V  [libjvm.so+0x871780]  JNI_CreateJavaVM+0x80'.
+
+# Created at 2026-08-11T19:09:15.834
+Corrupted channel by directly writing to native stream in forked JVM 1. Stream 'C  [libjli.so+0x837c]  JavaMain+0x7c'.
+
+# Created at 2026-08-11T19:09:15.835
+Corrupted channel by directly writing to native stream in forked JVM 1. Stream 'C  [libjli.so+0xbf4c]  ThreadJavaMain+0xc'.
+
+# Created at 2026-08-11T19:10:41.125
+Corrupted channel by directly writing to native stream in forked JVM 1. Stream 'C  [libc.so.6+0x82030]'.
+
