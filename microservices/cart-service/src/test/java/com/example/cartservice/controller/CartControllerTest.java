@@ -217,4 +217,29 @@ class CartControllerTest {
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.title").value("Bad Request"));
     }
+
+    // -------------------------------------------------------------------------
+    // PUT — unhandled exception → 500 (covers CartControllerAdvice.handleGeneral)
+    // -------------------------------------------------------------------------
+
+    @Test
+    @DisplayName("PUT /api/cart/items/{itemId}/quantity: unexpected service error returns 500 with opaque detail")
+    void updateQuantity_unexpectedError_returns500() throws Exception {
+        // Arrange — simulate an unhandled RuntimeException from CartService
+        when(cartService.updateQuantity(eq(1L), eq(2)))
+                .thenThrow(new RuntimeException("Unexpected DB error"));
+
+        UpdateQuantityRequest request = new UpdateQuantityRequest(2);
+        String body = objectMapper.writeValueAsString(request);
+
+        // Act + Assert — 500 with opaque detail (no internal message leaked per SR-DP-01)
+        mockMvc.perform(put("/api/cart/items/1/quantity")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isInternalServerError())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.status").value(500))
+                .andExpect(jsonPath("$.title").value("Internal Server Error"))
+                .andExpect(jsonPath("$.detail").value("An unexpected error occurred. Please try again later."));
+    }
 }
