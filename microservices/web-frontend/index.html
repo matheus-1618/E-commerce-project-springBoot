@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cart — JtShop</title>
+  <!-- Bootstrap 4 — no new CSS framework; matches existing monolith style -->
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css"
+    integrity="sha384-xOolHFLEh07PJGoPkLv1IbcEPTNtaed2xpHsD9ESMhqIYd0nLMwNLD69Npy4HI+N"
+    crossorigin="anonymous"
+  >
+  <style>
+    /*
+     * Accessibility override: Bootstrap 4's default .form-control border
+     * (#ced4da on white = 1.6:1) fails WCAG 2.1 SC 1.4.11.
+     * Override with a high-contrast border that passes 3:1 minimum.
+     */
+    .form-control {
+      border-color: #767676;
+    }
+    .form-control:focus {
+      border-color: #495057;
+      box-shadow: 0 0 0 0.2rem rgba(73,80,87,0.25);
+    }
+
+    /*
+     * Touch target override: .update-btn and .remove-btn must meet the
+     * 44×44 px minimum touch target (WCAG 2.1 SC 2.5.5).
+     */
+    .update-btn,
+    .remove-btn {
+      min-height: 44px;
+      min-width: 44px;
+      padding: 0.375rem 0.75rem;
+    }
+
+    /* Dim row while an async operation is in flight */
+    tr.cart-row-pending {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Navigation bar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <a class="navbar-brand" href="#">JtShop</a>
+  <button
+    class="navbar-toggler"
+    type="button"
+    data-toggle="collapse"
+    data-target="#navbarContent"
+    aria-controls="navbarContent"
+    aria-expanded="false"
+    aria-label="Toggle navigation"
+  >
+    <span class="navbar-toggler-icon"></span>
+  </button>
+  <div class="collapse navbar-collapse" id="navbarContent">
+    <ul class="navbar-nav mr-auto">
+      <li class="nav-item"><a class="nav-link" href="#">Products</a></li>
+      <li class="nav-item active"><a class="nav-link" href="#">Cart</a></li>
+      <li class="nav-item"><a class="nav-link" href="#">Account</a></li>
+    </ul>
+    <small class="text-light mr-2">cart-service: port 8081</small>
+  </div>
+</nav>
+
+<main class="container mt-4">
+  <h1 id="cart-heading" class="mb-4" tabindex="-1">Your Cart</h1>
+
+  <!--
+    ARIA live regions — kept SEPARATE per accessibility requirements:
+    - #cart-status (role=status, aria-live="polite"): success / info feedback
+    - #cart-error  (role=alert,  aria-live="assertive"): hard network errors
+
+    IMPORTANT: Never clear and repopulate in the same JS tick.
+    Use setTimeout(..., 0) between clear and repopulate to guarantee
+    the screen reader announcement fires.
+  -->
+  <div
+    id="cart-status"
+    role="status"
+    aria-live="polite"
+    aria-atomic="true"
+    class="mb-3"
+  ></div>
+
+  <div
+    id="cart-error"
+    role="alert"
+    aria-live="assertive"
+    aria-atomic="true"
+    class="mb-3"
+  ></div>
+
+  <div class="table-responsive">
+    <!--
+      NOTE: The cart-items table is NOT wrapped in a <form> element.
+      Wrapping in a form causes browsers to submit on Enter key press
+      inside quantity inputs (violates WCAG 2.1 keyboard interaction).
+    -->
+    <table
+      class="table table-striped table-hover align-middle"
+      id="cart-table"
+      aria-label="Cart items"
+    >
+      <thead class="thead-dark">
+        <tr>
+          <th scope="col">Product</th>
+          <th scope="col">Quantity</th>
+          <th scope="col">Unit Price</th>
+          <th scope="col">Subtotal</th>
+          <th scope="col">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="cart-items">
+
+        <!--
+          Cart rows — seeded statically for Phase 2.1.
+          Each row carries:
+            data-item-id    — the CartItem primary key (matches cart-service DB)
+            data-unit-price — unit price for client-side subtotal calculation
+
+          In a future phase, rows would be generated dynamically via a GET /api/cart
+          endpoint. For Phase 2.1, they are pre-populated here.
+        -->
+        <tr data-item-id="1" data-unit-price="10.00">
+          <td>Widget A</td>
+          <td>
+            <label for="qty-1" class="sr-only">Quantity for Widget A</label>
+            <input
+              id="qty-1"
+              type="number"
+              min="1"
+              max="999"
+              value="2"
+              class="form-control form-control-sm qty-input"
+              style="width:80px"
+              aria-label="Quantity for Widget A"
+              data-testid="qty-input-1"
+            >
+            <div class="invalid-feedback" id="qty-1-error"></div>
+          </td>
+          <td>$10.00</td>
+          <td class="line-total">$20.00</td>
+          <td>
+            <button
+              class="btn btn-sm btn-primary update-btn"
+              data-item-id="1"
+              aria-label="Update quantity for Widget A"
+              data-testid="update-btn-1"
+            >Update</button>
+            <button
+              class="btn btn-sm btn-danger remove-btn ml-1"
+              data-item-id="1"
+              aria-label="Remove Widget A from cart"
+              data-testid="remove-btn-1"
+            >Remove</button>
+          </td>
+        </tr>
+
+        <tr data-item-id="2" data-unit-price="25.00">
+          <td>Widget B</td>
+          <td>
+            <label for="qty-2" class="sr-only">Quantity for Widget B</label>
+            <input
+              id="qty-2"
+              type="number"
+              min="1"
+              max="999"
+              value="1"
+              class="form-control form-control-sm qty-input"
+              style="width:80px"
+              aria-label="Quantity for Widget B"
+              data-testid="qty-input-2"
+            >
+            <div class="invalid-feedback" id="qty-2-error"></div>
+          </td>
+          <td>$25.00</td>
+          <td class="line-total">$25.00</td>
+          <td>
+            <button
+              class="btn btn-sm btn-primary update-btn"
+              data-item-id="2"
+              aria-label="Update quantity for Widget B"
+              data-testid="update-btn-2"
+            >Update</button>
+            <button
+              class="btn btn-sm btn-danger remove-btn ml-1"
+              data-item-id="2"
+              aria-label="Remove Widget B from cart"
+              data-testid="remove-btn-2"
+            >Remove</button>
+          </td>
+        </tr>
+
+        <tr data-item-id="3" data-unit-price="15.00">
+          <td>Gadget Pro</td>
+          <td>
+            <label for="qty-3" class="sr-only">Quantity for Gadget Pro</label>
+            <input
+              id="qty-3"
+              type="number"
+              min="1"
+              max="999"
+              value="1"
+              class="form-control form-control-sm qty-input"
+              style="width:80px"
+              aria-label="Quantity for Gadget Pro"
+              data-testid="qty-input-3"
+            >
+            <div class="invalid-feedback" id="qty-3-error"></div>
+          </td>
+          <td>$15.00</td>
+          <td class="line-total">$15.00</td>
+          <td>
+            <button
+              class="btn btn-sm btn-primary update-btn"
+              data-item-id="3"
+              aria-label="Update quantity for Gadget Pro"
+              data-testid="update-btn-3"
+            >Update</button>
+            <button
+              class="btn btn-sm btn-danger remove-btn ml-1"
+              data-item-id="3"
+              aria-label="Remove Gadget Pro from cart"
+              data-testid="remove-btn-3"
+            >Remove</button>
+          </td>
+        </tr>
+
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Cart Summary -->
+  <div class="d-flex justify-content-end mt-3">
+    <div class="card" style="min-width:250px">
+      <div class="card-body">
+        <p class="mb-1">Items: <strong id="item-count">3</strong></p>
+        <p class="mb-1">Subtotal: <strong id="cart-subtotal">$60.00</strong></p>
+        <!--
+          Checkout button is permanently disabled in Phase 2.1.
+          aria-disabled="true" communicates the disabled state to assistive
+          technology even when the native 'disabled' attribute is present.
+          The badge explains WHY it is disabled to avoid user confusion.
+        -->
+        <button
+          class="btn btn-success btn-block mt-2"
+          disabled
+          aria-disabled="true"
+          data-testid="checkout-btn"
+        >
+          Proceed to Checkout
+          <span class="badge badge-secondary ml-1">Coming soon</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer class="text-center py-3 mt-5 text-muted">© JtShop</footer>
+
+<!-- Bootstrap 4 JS (required for navbar toggle) -->
+<script
+  src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js"
+  integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
+  crossorigin="anonymous"
+></script>
+<script
+  src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"
+  integrity="sha384-Fy6S3B9q64WdZWQUiU+q4/2Lc9npb8tCaSX9FK7E8HnRr0Jz8D6OP9dO5Vg3Q9ct"
+  crossorigin="anonymous"
+></script>
+
+<script>
+  /**
+   * Cart page — vanilla JS fetch() client for cart-service REST API.
+   *
+   * Endpoints consumed (per requirements-001 FR-7):
+   *   DELETE http://localhost:8081/api/cart/items/{itemId}  → 204 on success
+   *   PUT    http://localhost:8081/api/cart/items/{itemId}/quantity
+   *          body: { "quantity": N }                        → 200 + CartItemResponse
+   *
+   * CORS is handled server-side by CorsConfig.java (allowedOrigins="*").
+   * No jQuery for cart operations — native fetch() only.
+   * Bootstrap's slim jQuery (above) is for the navbar toggle only.
+   *
+   * Accessibility contract:
+   *   - Only the affected row is disabled during in-flight requests.
+   *   - Success: polite announcement in #cart-status, focus management.
+   *   - 400/404: inline message in #cart-error, row restored.
+   *   - 500/network: assertive announcement in #cart-error.
+   */
+
+  // ─── Constants ─────────────────────────────────────────────────────────────
+  var CART_SERVICE_BASE = 'http://localhost:8081/api/cart/items';
+
+  // ─── DOM helpers ────────────────────────────────────────────────────────────
+
+  /**
+   * Show a message in the polite live region (success / info).
+   * Clears first in a separate tick to ensure screen readers re-announce.
+   */
+  function showStatus(msg) {
+    var el = document.getElementById('cart-status');
+    el.innerHTML = '';
+    setTimeout(function () {
+      el.innerHTML =
+        '<div class="alert alert-success alert-dismissible mb-0" role="none">' +
+        '<button type="button" class="close" data-dismiss="alert" aria-label="Dismiss">' +
+        '<span aria-hidden="true">&times;</span></button>' + escapeHtml(msg) + '</div>';
+    }, 0);
+  }
+
+  /**
+   * Show a message in the assertive live region (errors).
+   * Clears first in a separate tick.
+   */
+  function showError(msg) {
+    var el = document.getElementById('cart-error');
+    el.innerHTML = '';
+    setTimeout(function () {
+      el.innerHTML =
+        '<div class="alert alert-danger alert-dismissible mb-0" role="none">' +
+        '<button type="button" class="close" data-dismiss="alert" aria-label="Dismiss">' +
+        '<span aria-hidden="true">&times;</span></button>' + escapeHtml(msg) + '</div>';
+    }, 0);
+  }
+
+  /** Clear both live regions. */
+  function clearFeedback() {
+    document.getElementById('cart-status').innerHTML = '';
+    document.getElementById('cart-error').innerHTML = '';
+  }
+
+  /** Escape HTML to prevent XSS from server-side error detail strings. */
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  /**
+   * Find the <tr> ancestor with the given data-item-id.
+   * @param {number|string} itemId
+   * @returns {HTMLTableRowElement|null}
+   */
+  function getRow(itemId) {
+    return document.querySelector('tr[data-item-id="' + itemId + '"]');
+  }
+
+  /** Disable (dim) a cart row during an in-flight request. */
+  function disableRow(row) {
+    row.classList.add('cart-row-pending');
+  }
+
+  /** Re-enable a cart row after a request completes. */
+  function enableRow(row) {
+    row.classList.remove('cart-row-pending');
+  }
+
+  // ─── Summary recalculation ──────────────────────────────────────────────────
+
+  /** Recalculate item count and subtotal from visible rows. */
+  function updateSummary() {
+    var rows = document.querySelectorAll('#cart-items tr[data-item-id]');
+    var count = rows.length;
+    var subtotal = 0;
+    rows.forEach(function (row) {
+      var unitPrice = parseFloat(row.getAttribute('data-unit-price')) || 0;
+      var qtyInput = row.querySelector('.qty-input');
+      var qty = qtyInput ? (parseInt(qtyInput.value, 10) || 0) : 0;
+      var lineTotal = unitPrice * qty;
+      var lineTotalCell = row.querySelector('.line-total');
+      if (lineTotalCell) {
+        lineTotalCell.textContent = '$' + lineTotal.toFixed(2);
+      }
+      subtotal += lineTotal;
+    });
+    var itemCountEl = document.getElementById('item-count');
+    var subtotalEl = document.getElementById('cart-subtotal');
+    if (itemCountEl) itemCountEl.textContent = count;
+    if (subtotalEl) subtotalEl.textContent = '$' + subtotal.toFixed(2);
+  }
+
+  // ─── Remove item ────────────────────────────────────────────────────────────
+
+  /**
+   * DELETE /api/cart/items/{itemId}
+   * On success (204): remove the DOM row and move focus.
+   * On 404: display advisory message, keep row.
+   * On 500 / network error: assertive error announcement.
+   *
+   * @param {HTMLButtonElement} btn the Remove button that was clicked
+   */
+  function removeItem(btn) {
+    var itemId = btn.getAttribute('data-item-id');
+    var row = getRow(itemId);
+    if (!row) return;
+
+    clearFeedback();
+    disableRow(row);
+
+    fetch(CART_SERVICE_BASE + '/' + itemId, {
+      method: 'DELETE'
+    })
+    .then(function (response) {
+      if (response.status === 204) {
+        // Success — remove the row and move focus
+        var productName = row.querySelector('td:first-child')
+          ? row.querySelector('td:first-child').textContent.trim()
+          : 'Item';
+        row.parentNode.removeChild(row);
+        updateSummary();
+        showStatus(productName + ' removed from cart.');
+
+        // Move focus to heading or first remaining interactive element
+        var firstUpdateBtn = document.querySelector('.update-btn:not([disabled])');
+        var heading = document.getElementById('cart-heading');
+        if (firstUpdateBtn) {
+          firstUpdateBtn.focus();
+        } else if (heading) {
+          heading.focus();
+        }
+        return;
+      }
+
+      // Non-204 — attempt to parse RFC 7807 error body
+      enableRow(row);
+      return response.json().then(function (errorBody) {
+        var detail = (errorBody && errorBody.detail)
+          ? errorBody.detail
+          : 'An error occurred (HTTP ' + response.status + ').';
+        if (response.status === 404) {
+          showError('Item not found: ' + detail);
+        } else {
+          showError('Remove failed: ' + detail);
+        }
+        btn.focus();
+      });
+    })
+    .catch(function (err) {
+      // Network error or parse failure
+      enableRow(row);
+      showError('Something went wrong, please try again.');
+      btn.focus();
+    });
+  }
+
+  // ─── Update quantity ─────────────────────────────────────────────────────────
+
+  /**
+   * PUT /api/cart/items/{itemId}/quantity
+   * On success (200): update the quantity input's value and recalculate subtotals.
+   * On 400: inline validation error on the quantity input.
+   * On 404: advisory error message, keep row.
+   * On 500 / network error: assertive error announcement.
+   *
+   * @param {HTMLButtonElement} btn the Update button that was clicked
+   */
+  function updateQuantity(btn) {
+    var itemId = btn.getAttribute('data-item-id');
+    var row = getRow(itemId);
+    if (!row) return;
+
+    var qtyInput = row.querySelector('.qty-input');
+    var qtyErrorDiv = qtyInput
+      ? document.getElementById('qty-' + itemId + '-error')
+      : null;
+
+    // Clear previous inline validation state
+    if (qtyInput) {
+      qtyInput.classList.remove('is-invalid');
+    }
+    if (qtyErrorDiv) {
+      qtyErrorDiv.textContent = '';
+    }
+    clearFeedback();
+
+    var newQty = qtyInput ? parseInt(qtyInput.value, 10) : NaN;
+
+    // Client-side guard: quantity must be a positive integer
+    if (isNaN(newQty) || newQty < 1) {
+      if (qtyInput) {
+        qtyInput.classList.add('is-invalid');
+      }
+      if (qtyErrorDiv) {
+        qtyErrorDiv.textContent = 'Quantity must be at least 1.';
+      }
+      showError('quantity: quantity must be at least 1');
+      if (qtyInput) qtyInput.focus();
+      return;
+    }
+
+    disableRow(row);
+
+    fetch(CART_SERVICE_BASE + '/' + itemId + '/quantity', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ quantity: newQty })
+    })
+    .then(function (response) {
+      if (response.status === 200) {
+        return response.json().then(function (cartItemResponse) {
+          // Success — update qty input with server-confirmed value
+          enableRow(row);
+          var serverQty = cartItemResponse.quantity;
+          if (qtyInput) {
+            qtyInput.value = serverQty;
+          }
+          updateSummary();
+          showStatus('Quantity updated to ' + serverQty + '.');
+          btn.focus();
+        });
+      }
+
+      // Non-200 — parse error body
+      enableRow(row);
+      return response.json().then(function (errorBody) {
+        var detail = (errorBody && errorBody.detail)
+          ? errorBody.detail
+          : 'An error occurred (HTTP ' + response.status + ').';
+        if (response.status === 400) {
+          // Inline validation error
+          if (qtyInput) qtyInput.classList.add('is-invalid');
+          if (qtyErrorDiv) qtyErrorDiv.textContent = detail;
+          showError(detail);
+          if (qtyInput) qtyInput.focus();
+        } else if (response.status === 404) {
+          showError('Item not found: ' + detail);
+          btn.focus();
+        } else {
+          showError('Update failed: ' + detail);
+          btn.focus();
+        }
+      });
+    })
+    .catch(function (err) {
+      // Network error or JSON parse failure
+      enableRow(row);
+      showError('Something went wrong, please try again.');
+      btn.focus();
+    });
+  }
+
+  // ─── Event delegation ────────────────────────────────────────────────────────
+
+  /**
+   * Single event listener on #cart-items covers all rows including any future
+   * dynamically added rows. Routes clicks to the appropriate handler based on
+   * the button's class.
+   */
+  document.getElementById('cart-items').addEventListener('click', function (event) {
+    var target = event.target;
+
+    if (target.classList.contains('remove-btn')) {
+      removeItem(target);
+    } else if (target.classList.contains('update-btn')) {
+      updateQuantity(target);
+    }
+  });
+
+  /**
+   * Allow pressing Enter inside a quantity input to trigger the Update action
+   * for that row, rather than submitting a (non-existent) form.
+   */
+  document.getElementById('cart-items').addEventListener('keydown', function (event) {
+    if (event.key === 'Enter' && event.target.classList.contains('qty-input')) {
+      event.preventDefault();
+      var row = event.target.closest('tr[data-item-id]');
+      if (row) {
+        var updateBtn = row.querySelector('.update-btn');
+        if (updateBtn) updateBtn.click();
+      }
+    }
+  });
+
+  // ─── Initial summary calculation ─────────────────────────────────────────────
+  updateSummary();
+
+</script>
+</body>
+</html>
