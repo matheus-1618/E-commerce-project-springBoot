@@ -107,7 +107,6 @@
 		</table>
 		<%
 		} catch (Exception ex) {
-		out.println("Exception Occurred:: " + ex.getMessage());
 		}
 		%>
 	</div>
