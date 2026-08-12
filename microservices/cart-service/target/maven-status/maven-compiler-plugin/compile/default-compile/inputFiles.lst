@@ -1,0 +1,9 @@
+/mnt/workspace/matheus-1618/E-commerce-project-springBoot/microservices/cart-service/src/main/java/com/example/cartservice/model/CartItem.java
+/mnt/workspace/matheus-1618/E-commerce-project-springBoot/microservices/cart-service/src/main/java/com/example/cartservice/controller/CartController.java
+/mnt/workspace/matheus-1618/E-commerce-project-springBoot/microservices/cart-service/src/main/java/com/example/cartservice/service/CartService.java
+/mnt/workspace/matheus-1618/E-commerce-project-springBoot/microservices/cart-service/src/main/java/com/example/cartservice/dto/UpdateQuantityRequest.java
+/mnt/workspace/matheus-1618/E-commerce-project-springBoot/microservices/cart-service/src/main/java/com/example/cartservice/dto/CartItemResponse.java
+/mnt/workspace/matheus-1618/E-commerce-project-springBoot/microservices/cart-service/src/main/java/com/example/cartservice/exception/CartControllerAdvice.java
+/mnt/workspace/matheus-1618/E-commerce-project-springBoot/microservices/cart-service/src/main/java/com/example/cartservice/CartServiceApplication.java
+/mnt/workspace/matheus-1618/E-commerce-project-springBoot/microservices/cart-service/src/main/java/com/example/cartservice/config/CorsConfig.java
+/mnt/workspace/matheus-1618/E-commerce-project-springBoot/microservices/cart-service/src/main/java/com/example/cartservice/repository/CartRepository.java

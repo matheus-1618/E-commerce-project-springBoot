@@ -20,6 +20,14 @@
 
     <properties>
         <java.version>11</java.version>
+        <!-- JaCoCo exec file path — override with -Djacoco.execFile=/tmp/jacoco.exec
+             on CI/overlay mounts that do not support POSIX file locking (NFS, overlayfs).
+             Defaults to the standard target directory for local developer builds. -->
+        <jacoco.execFile>${project.build.directory}/jacoco.exec</jacoco.execFile>
+        <!-- JaCoCo HTML report output directory — override with
+             -Djacoco.reportOutputDir=/tmp/jacoco-report on CI environments with limited
+             disk space on the workspace mount. -->
+        <jacoco.reportOutputDir>${project.reporting.outputDirectory}/jacoco</jacoco.reportOutputDir>
     </properties>
 
     <dependencies>
@@ -74,6 +82,9 @@
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>
+                        <configuration>
+                            <destFile>${jacoco.execFile}</destFile>
+                        </configuration>
                     </execution>
                     <execution>
                         <id>report</id>
@@ -81,6 +92,10 @@
                         <goals>
                             <goal>report</goal>
                         </goals>
+                        <configuration>
+                            <dataFile>${jacoco.execFile}</dataFile>
+                            <outputDirectory>${jacoco.reportOutputDir}</outputDirectory>
+                        </configuration>
                     </execution>
                     <!-- Coverage gate: fail the build if CartController or CartService
                          drops below 80% line coverage (req-unit-test-coverage-gate / NFR-1) -->
@@ -91,6 +106,7 @@
                             <goal>check</goal>
                         </goals>
                         <configuration>
+                            <dataFile>${jacoco.execFile}</dataFile>
                             <rules>
                                 <rule>
                                     <element>CLASS</element>
