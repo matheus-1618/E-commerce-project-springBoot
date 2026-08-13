@@ -49,7 +49,7 @@ INSERT INTO `categories` (`categoryid`, `name`) VALUES
 
 CREATE TABLE `login` (
   `id` int(11) NOT NULL,
-  `password` varchar(20) NOT NULL,
+  `password` varchar(255) NOT NULL,
   `username` varchar(20) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -58,7 +58,7 @@ CREATE TABLE `login` (
 --
 
 INSERT INTO `login` (`id`, `password`, `username`) VALUES
-(1, '123', '1');
+(1, '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '1');
 
 -- --------------------------------------------------------
 
@@ -95,7 +95,7 @@ INSERT INTO `products` (`id`, `name`, `image`, `categoryid`, `quantity`, `price`
 CREATE TABLE `users` (
   `user_id` int(11) NOT NULL,
   `username` varchar(45) NOT NULL,
-  `password` varchar(64) NOT NULL,
+  `password` varchar(255) NOT NULL,
   `role` varchar(45) NOT NULL,
   `enabled` tinyint(4) DEFAULT NULL,
   `email` varchar(110) NOT NULL
@@ -103,11 +103,12 @@ CREATE TABLE `users` (
 
 --
 -- Dumping data for table `users`
+-- Passwords are BCrypt hashes of '123' with cost factor 10
 --
 
 INSERT INTO `users` (`user_id`, `username`, `password`, `role`, `enabled`, `email`) VALUES
-(1, 'jay', '123', 'ROLE_USER', 1, 'gajerajay9@gmail.com'),
-(2, 'admin', '123', 'ROLE_ADMIN', 1, '20ceuos042@ddu.ac.in');
+(1, 'jay', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'ROLE_USER', 1, 'gajerajay9@gmail.com'),
+(2, 'admin', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'ROLE_ADMIN', 1, '20ceuos042@ddu.ac.in');
 
 --
 -- Indexes for dumped tables
