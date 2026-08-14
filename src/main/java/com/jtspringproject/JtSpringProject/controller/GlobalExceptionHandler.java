@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.BindException;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -51,18 +52,31 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Handles validation and binding exceptions, returning HTTP 400 and the generic error view.
+     * Handles validation and binding exceptions, returning HTTP 400 and the error view
+     * with field-level errors preserved in the model.
      *
-     * @param ex      the validation exception that was thrown
+     * <p>Per dec-validation-field-errors, FieldError messages are developer-defined
+     * user-facing text and are NOT information leakage.</p>
+     *
+     * @param ex      the validation exception (BindException or MethodArgumentNotValidException)
      * @param request the current HTTP request (used to obtain the URI for logging)
-     * @return a ModelAndView with an empty model pointing to the error view
+     * @return a ModelAndView with BindingResult in model under key "errors"
      */
     @ExceptionHandler({BindException.class, MethodArgumentNotValidException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ModelAndView handleValidation(Exception ex, HttpServletRequest request) {
-        logger.warn("Validation failure at URI [{}]", request.getRequestURI(), ex);
+        logger.warn("Validation failed: URI=[{}]", request.getRequestURI());
+
+        BindingResult bindingResult;
+        if (ex instanceof BindException) {
+            bindingResult = ((BindException) ex).getBindingResult();
+        } else {
+            bindingResult = ((MethodArgumentNotValidException) ex).getBindingResult();
+        }
+
         ModelAndView mv = new ModelAndView(VIEW_ERROR);
         mv.setStatus(HttpStatus.BAD_REQUEST);
+        mv.addObject("errors", bindingResult);
         return mv;
     }
 
