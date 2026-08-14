@@ -1,5 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=ISO-8859-1"
     pageEncoding="ISO-8859-1"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <!DOCTYPE html>
 <html>
 <head>
@@ -53,6 +54,13 @@
     <div class="container">
         <h1>An Error Occurred</h1>
         <p>Sorry, something went wrong. Please try again later.</p>
+        <c:if test="${not empty errors}">
+            <ul style="text-align: left; color: #e74c3c; list-style: none; padding: 0;">
+                <c:forEach items="${errors.fieldErrors}" var="err">
+                    <li>${err.field}: ${err.defaultMessage}</li>
+                </c:forEach>
+            </ul>
+        </c:if>
         <a href="/" class="button">Return to Home</a>
     </div>
 </body>
