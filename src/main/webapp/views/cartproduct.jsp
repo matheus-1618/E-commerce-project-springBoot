@@ -1,8 +1,4 @@
-<%@page import="java.sql.*"%>
-<%@page import="java.util.*"%>
-<%@page import="java.text.*"%>
-<%@page import ="java.io.FileOutputStream" %>    
-<%@page import=" java.io.ObjectOutputStream" %>    
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <!doctype html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
@@ -56,60 +52,25 @@
 				<th scope="col">Price</th>
 				<th scope="col">Description</th>
 				<th scope="col">Delete</th>
-				
+
 			</tr>
 			<tbody>
+				<c:forEach var="cart" items="${carts}">
 				<tr>
-
-					<%
-					try {
-						String url = "jdbc:mysql://localhost:3306/springproject";
-						Class.forName("com.mysql.cj.jdbc.Driver");
-						Connection con = DriverManager.getConnection(url, "root", "");
-						Statement stmt = con.createStatement();
-						Statement stmt2 = con.createStatement();
-						ResultSet rs = stmt.executeQuery("select * from cart");
-					%>
-					<%
-					while (rs.next()) {
-					%>
+					<td>${cart.id}</td>
+					<td>${cart.customer.username}</td>
+					<td>${cart.customer.email}</td>
+					<td>${cart.customer.address}</td>
 					<td>
-						<%= rs.getInt(1) %>
-					</td>
-					<td>
-						<%= rs.getString(2) %>
-					</td>
-					<td>
-						<%= rs.getString(3) %>
-						
-					</td>
-					<td>
-						<%= rs.getString(4) %>
-						
-					</td>
-					
-					
-
-					<td>
-					<form action="cart/delete" method="get">
-							<input type="hidden" name="id" value="<%=rs.getInt(1)%>">
+					<form action="/cart/delete" method="get">
+							<input type="hidden" name="id" value="${cart.id}">
 							<input type="submit" value="Delete" class="btn btn-danger">
 					</form>
 					</td>
-					
-
 				</tr>
-				<%
-				}
-				%>
-
+				</c:forEach>
 			</tbody>
 		</table>
-		<%
-		} catch (Exception ex) {
-		out.println("Exception Occurred:: " + ex.getMessage());
-		}
-		%>
 	</div>
 
 

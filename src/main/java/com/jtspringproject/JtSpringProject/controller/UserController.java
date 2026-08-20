@@ -1,5 +1,6 @@
 package com.jtspringproject.JtSpringProject.controller;
 
+import com.jtspringproject.JtSpringProject.models.Cart;
 import com.jtspringproject.JtSpringProject.models.Product;
 import com.jtspringproject.JtSpringProject.models.User;
 
@@ -19,17 +20,20 @@ import org.springframework.web.servlet.ModelAndView;
 
 import com.jtspringproject.JtSpringProject.services.userService;
 import com.jtspringproject.JtSpringProject.services.productService;
+import com.jtspringproject.JtSpringProject.services.cartService;
 
 @Controller
 public class UserController {
 
 	private final userService userService;
 	private final productService productService;
+	private final cartService cartService;
 
 	@Autowired
-	public UserController(userService userService, productService productService) {
+	public UserController(userService userService, productService productService, cartService cartService) {
 		this.userService = userService;
 		this.productService = productService;
+		this.cartService = cartService;
 	}
 
 	@GetMapping("/register")
@@ -127,6 +131,22 @@ public class UserController {
 			refreshAuthenticatedPrincipal(username);
 		}
 		return "redirect:/";
+	}
+
+	@GetMapping("/cart")
+	public ModelAndView viewCart() {
+		ModelAndView mView = new ModelAndView("cartproduct");
+		List<Cart> carts = this.cartService.getCarts();
+		mView.addObject("carts", carts);
+		return mView;
+	}
+
+	@GetMapping("/cart/delete")
+	public String deleteCart(@RequestParam("id") int id) {
+		Cart cart = new Cart();
+		cart.setId(id);
+		this.cartService.deleteCart(cart);
+		return "redirect:/cart";
 	}
 
 	private void refreshAuthenticatedPrincipal(String username) {
