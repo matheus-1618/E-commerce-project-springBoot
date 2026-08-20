@@ -4,6 +4,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
@@ -76,11 +77,17 @@ class GlobalExceptionHandlerTest {
         }
     }
 
+    /**
+     * Triggers a BindException with a field error so the validation handler is
+     * exercised and FieldError propagation can be verified.
+     */
     @Controller
     static class ValidationErrorTrigger {
         @GetMapping("/test/validation-error")
         public void trigger() throws BindException {
-            throw new BindException(new Object(), SENTINEL_VALIDATION);
+            BindException ex = new BindException(new Object(), "product");
+            ex.rejectValue(null, "NotNull", "Name is required");
+            throw ex;
         }
     }
 
@@ -109,9 +116,24 @@ class GlobalExceptionHandlerTest {
                 .andExpect(view().name("error"));
     }
 
-    // -------------------------------------------------------------------------
-    // CWE-R1: Sentinel message absence (FR-08, NFR-01)
-    // -------------------------------------------------------------------------
+    // ---------------------------------------------------------------------------
+    // Tests — Validation model attribute (FR-02, dec-validation-field-errors)
+    // ---------------------------------------------------------------------------
+
+    /**
+     * BindException must place the BindingResult in the model under key "errors"
+     * so the view can render field-level validation messages.
+     */
+    @Test
+    void handleValidation_placesBindingResultInModel() throws Exception {
+        mockMvc.perform(get("/test/validation-error"))
+                .andExpect(status().isBadRequest())
+                .andExpect(model().attributeExists("errors"));
+    }
+
+    // ---------------------------------------------------------------------------
+    // Tests — CWE-209 no-leakage assertions (req-nfr-no-leakage)
+    // ---------------------------------------------------------------------------
 
     @Test
     void handleNotFound_doesNotLeakExceptionMessageInResponseBody() throws Exception {
