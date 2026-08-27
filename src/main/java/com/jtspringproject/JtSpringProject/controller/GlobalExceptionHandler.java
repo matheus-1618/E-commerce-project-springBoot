@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.NoHandlerFoundException;
 
 /**
  * Global exception handler for all Spring MVC controllers.
@@ -46,6 +47,25 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ModelAndView handleNotFound(NoSuchElementException ex, HttpServletRequest request) {
         logger.warn("Resource not found at URI [{}]", request.getRequestURI(), ex);
+        ModelAndView mv = new ModelAndView(VIEW_404);
+        mv.setStatus(HttpStatus.NOT_FOUND);
+        return mv;
+    }
+
+    /**
+     * Handles unmapped URL requests when DispatcherServlet throws NoHandlerFoundException.
+     *
+     * <p>Requires {@code spring.mvc.throw-exception-if-no-handler-found=true} and
+     * {@code spring.web.resources.add-mappings=false} in application.properties.</p>
+     *
+     * @param ex      the NoHandlerFoundException thrown by DispatcherServlet
+     * @param request the current HTTP request (used to obtain the method and URI for logging)
+     * @return a ModelAndView with an empty model pointing to the 404 view
+     */
+    @ExceptionHandler(NoHandlerFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ModelAndView handleNoHandlerFound(NoHandlerFoundException ex, HttpServletRequest request) {
+        logger.warn("No handler found for [{}] [{}]", request.getMethod(), request.getRequestURI(), ex);
         ModelAndView mv = new ModelAndView(VIEW_404);
         mv.setStatus(HttpStatus.NOT_FOUND);
         return mv;
