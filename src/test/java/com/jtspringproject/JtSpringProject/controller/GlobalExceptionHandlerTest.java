@@ -8,8 +8,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
+import java.lang.reflect.Method;
 import java.util.NoSuchElementException;
 
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
@@ -26,18 +28,6 @@ import com.jtspringproject.JtSpringProject.services.categoryService;
 import com.jtspringproject.JtSpringProject.services.productService;
 import com.jtspringproject.JtSpringProject.services.userService;
 
-/**
- * WebMvcTest suite for GlobalExceptionHandler.
- *
- * <p>Uses lightweight stub controllers to trigger each exception handler and
- * verifies correct HTTP status codes, view names, and absence of exception
- * detail strings in response bodies (CWE-209 no-leakage assertion per
- * [[security-design]]).</p>
- *
- * <p>Spring Security and Hibernate JPA auto-configurations are excluded so the
- * test runs without a live database or security filter chain, per
- * dec-webmvctest-mock-services.</p>
- */
 @WebMvcTest(
     controllers = {
         GlobalExceptionHandler.class,
@@ -58,6 +48,7 @@ class GlobalExceptionHandlerTest {
 
     static final String SENTINEL_NOT_FOUND = "SENTINEL_NOT_FOUND_12345";
     static final String SENTINEL_INTERNAL = "SENTINEL_INTERNAL_67890";
+    static final String SENTINEL_VALIDATION = "SENTINEL_VALIDATION_24680";
 
     @Autowired
     private MockMvc mockMvc;
@@ -71,14 +62,10 @@ class GlobalExceptionHandlerTest {
     @MockBean
     private productService productService;
 
-    // ---------------------------------------------------------------------------
+    // -------------------------------------------------------------------------
     // Stub controllers that trigger specific exceptions
-    // ---------------------------------------------------------------------------
+    // -------------------------------------------------------------------------
 
-    /**
-     * Triggers a NoSuchElementException with a sentinel message so tests can
-     * verify the message does NOT appear in the HTTP response body.
-     */
     @Controller
     static class NotFoundTrigger {
         @GetMapping("/test/not-found")
@@ -87,10 +74,6 @@ class GlobalExceptionHandlerTest {
         }
     }
 
-    /**
-     * Triggers a generic RuntimeException with a sentinel message so tests can
-     * verify the message does NOT appear in the HTTP response body.
-     */
     @Controller
     static class ServerErrorTrigger {
         @GetMapping("/test/server-error")
@@ -113,14 +96,10 @@ class GlobalExceptionHandlerTest {
         }
     }
 
-    // ---------------------------------------------------------------------------
-    // Tests — HTTP status codes and view routing
-    // ---------------------------------------------------------------------------
+    // -------------------------------------------------------------------------
+    // Tests — HTTP status codes and view routing (FR-01, FR-02, FR-03)
+    // -------------------------------------------------------------------------
 
-    /**
-     * NoSuchElementException must yield HTTP 404 and route to the 404 view
-     * (story-safe-404-page, req-not-found-handler).
-     */
     @Test
     void handleNotFound_returns404StatusAndView() throws Exception {
         mockMvc.perform(get("/test/not-found"))
@@ -128,10 +107,6 @@ class GlobalExceptionHandlerTest {
                 .andExpect(view().name("404"));
     }
 
-    /**
-     * Generic Exception must yield HTTP 500 and route to the error view
-     * (story-safe-500-page, req-catchall-handler).
-     */
     @Test
     void handleAll_returns500StatusAndErrorView() throws Exception {
         mockMvc.perform(get("/test/server-error"))
@@ -139,10 +114,6 @@ class GlobalExceptionHandlerTest {
                 .andExpect(view().name("error"));
     }
 
-    /**
-     * BindException must yield HTTP 400 and route to the error view
-     * (req-validation-handler).
-     */
     @Test
     void handleValidation_returns400StatusAndErrorView() throws Exception {
         mockMvc.perform(get("/test/validation-error"))
@@ -169,10 +140,6 @@ class GlobalExceptionHandlerTest {
     // Tests — CWE-209 no-leakage assertions (req-nfr-no-leakage)
     // ---------------------------------------------------------------------------
 
-    /**
-     * The NoSuchElementException sentinel message must NOT appear in the HTTP
-     * response body — verifies CWE-209 compliance for the 404 handler.
-     */
     @Test
     void handleNotFound_doesNotLeakExceptionMessageInResponseBody() throws Exception {
         mockMvc.perform(get("/test/not-found"))
@@ -180,15 +147,118 @@ class GlobalExceptionHandlerTest {
                 .andExpect(content().string(not(containsString(SENTINEL_NOT_FOUND))));
     }
 
-    /**
-     * The RuntimeException sentinel message must NOT appear in the HTTP response
-     * body — verifies CWE-209 compliance for the catch-all handler.
-     */
     @Test
     void handleAll_doesNotLeakExceptionMessageInResponseBody() throws Exception {
         mockMvc.perform(get("/test/server-error"))
                 .andExpect(status().isInternalServerError())
                 .andExpect(content().string(not(containsString(SENTINEL_INTERNAL))));
+    }
+
+    @Test
+    void handleValidation_doesNotLeakExceptionMessageInResponseBody() throws Exception {
+        mockMvc.perform(get("/test/validation-error"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string(not(containsString(SENTINEL_VALIDATION))));
+    }
+
+    // -------------------------------------------------------------------------
+    // CWE-R2: Exception class name absence (FR-08, NFR-01)
+    // -------------------------------------------------------------------------
+
+    @Test
+    void handleNotFound_doesNotLeakExceptionClassName() throws Exception {
+        mockMvc.perform(get("/test/not-found"))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string(not(containsString("NoSuchElementException"))));
+    }
+
+    @Test
+    void handleAll_doesNotLeakExceptionClassName() throws Exception {
+        mockMvc.perform(get("/test/server-error"))
+                .andExpect(status().isInternalServerError())
+                .andExpect(content().string(not(containsString("RuntimeException"))));
+    }
+
+    @Test
+    void handleValidation_doesNotLeakExceptionClassName() throws Exception {
+        mockMvc.perform(get("/test/validation-error"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string(not(containsString("BindException"))));
+    }
+
+    // -------------------------------------------------------------------------
+    // CWE-R3: Stack trace fragment absence (FR-08, NFR-01)
+    // -------------------------------------------------------------------------
+
+    @Test
+    void handleNotFound_doesNotLeakStackTrace() throws Exception {
+        mockMvc.perform(get("/test/not-found"))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string(not(containsString("at com.jtspringproject"))));
+    }
+
+    @Test
+    void handleAll_doesNotLeakStackTrace() throws Exception {
+        mockMvc.perform(get("/test/server-error"))
+                .andExpect(status().isInternalServerError())
+                .andExpect(content().string(not(containsString("at com.jtspringproject"))));
+    }
+
+    @Test
+    void handleValidation_doesNotLeakStackTrace() throws Exception {
+        mockMvc.perform(get("/test/validation-error"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string(not(containsString("at com.jtspringproject"))));
+    }
+
+    // -------------------------------------------------------------------------
+    // CWE-R4: Package path absence (FR-08, NFR-01)
+    // -------------------------------------------------------------------------
+
+    @Test
+    void handleNotFound_doesNotLeakPackagePath() throws Exception {
+        mockMvc.perform(get("/test/not-found"))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string(not(containsString("com.jtspringproject.JtSpringProject"))));
+    }
+
+    @Test
+    void handleAll_doesNotLeakPackagePath() throws Exception {
+        mockMvc.perform(get("/test/server-error"))
+                .andExpect(status().isInternalServerError())
+                .andExpect(content().string(not(containsString("com.jtspringproject.JtSpringProject"))));
+    }
+
+    @Test
+    void handleValidation_doesNotLeakPackagePath() throws Exception {
+        mockMvc.perform(get("/test/validation-error"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string(not(containsString("com.jtspringproject.JtSpringProject"))));
+    }
+
+    // -------------------------------------------------------------------------
+    // FR-04: Conditional NoHandlerFoundException test (dec-nohandlerfound-gated)
+    // -------------------------------------------------------------------------
+
+    @Test
+    void handleNoHandlerFound_returns404WhenEnabled() throws Exception {
+        Method handler = null;
+        try {
+            handler = GlobalExceptionHandler.class.getDeclaredMethod(
+                    "handleNoHandlerFound", org.springframework.web.servlet.NoHandlerFoundException.class,
+                    javax.servlet.http.HttpServletRequest.class);
+        } catch (NoSuchMethodException ignored) {
+            // method not present
+        }
+        Assumptions.assumeTrue(handler != null,
+                "Skipped: handleNoHandlerFound not present (nohandler-found-gate not yet applied)");
+
+        mockMvc.perform(get("/test/unmapped-path-that-does-not-exist"))
+                .andExpect(status().isNotFound())
+                .andExpect(view().name("404"))
+                .andExpect(content().string(not(containsString("com.jtspringproject.JtSpringProject"))))
+                .andExpect(content().string(not(containsString("at com.jtspringproject"))))
+                .andExpect(content().string(not(containsString("NoHandlerFoundException"))));
     }
 
     // ---------------------------------------------------------------------------
