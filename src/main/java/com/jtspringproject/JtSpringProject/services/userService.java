@@ -2,6 +2,8 @@ package com.jtspringproject.JtSpringProject.services;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -12,6 +14,8 @@ import com.jtspringproject.JtSpringProject.models.User;
 
 @Service
 public class userService {
+	private static final Logger logger = LoggerFactory.getLogger(userService.class);
+
 	private final userDao userDao;
 	private final PasswordEncoder passwordEncoder;
 
@@ -32,6 +36,7 @@ public class userService {
 			}
 			return this.userDao.saveUser(user);
 		} catch (DataIntegrityViolationException e) {
+			logger.error("Failed to create user due to data integrity violation", e);
 			throw new IllegalStateException("Unable to create user due to data integrity constraints.", e);
 		}
 	}

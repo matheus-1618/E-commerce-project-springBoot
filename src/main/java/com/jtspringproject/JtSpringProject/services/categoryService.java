@@ -2,6 +2,8 @@ package com.jtspringproject.JtSpringProject.services;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import com.jtspringproject.JtSpringProject.dao.categoryDao;
@@ -9,6 +11,8 @@ import com.jtspringproject.JtSpringProject.models.Category;
 
 @Service
 public class categoryService {
+	private static final Logger logger = LoggerFactory.getLogger(categoryService.class);
+
 	private final categoryDao categoryDao;
 
 	public categoryService(categoryDao categoryDao) {

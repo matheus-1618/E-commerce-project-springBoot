@@ -7,11 +7,15 @@ import com.jtspringproject.JtSpringProject.models.CartProduct;
 import com.jtspringproject.JtSpringProject.models.Product;
 
 import org.hibernate.SessionFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 @Repository
 public class cartProductDao {
+    private static final Logger logger = LoggerFactory.getLogger(cartProductDao.class);
+
     private final SessionFactory sessionFactory;
 
     public cartProductDao(SessionFactory sessionFactory) {
