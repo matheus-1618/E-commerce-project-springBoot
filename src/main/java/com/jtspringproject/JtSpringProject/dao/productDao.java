@@ -4,6 +4,8 @@ import java.util.List;
 
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -11,6 +13,8 @@ import com.jtspringproject.JtSpringProject.models.Product;
 
 @Repository
 public class productDao {
+	private static final Logger logger = LoggerFactory.getLogger(productDao.class);
+
 	private final SessionFactory sessionFactory;
 
 	public productDao(SessionFactory sessionFactory) {

@@ -7,6 +7,8 @@ import javax.persistence.NoResultException;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,6 +16,8 @@ import com.jtspringproject.JtSpringProject.models.User;
 
 @Repository
 public class userDao {
+	private static final Logger logger = LoggerFactory.getLogger(userDao.class);
+
 	private final SessionFactory sessionFactory;
 
 	public userDao(SessionFactory sessionFactory) {
@@ -49,6 +53,7 @@ public class userDao {
 		try {
 			return query.getSingleResult();
 		} catch (NoResultException e) {
+			logger.debug("No user found for username lookup", e);
 			return null;
 		}
 	}
