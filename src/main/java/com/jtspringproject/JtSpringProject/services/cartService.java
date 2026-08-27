@@ -5,11 +5,15 @@ import java.util.List;
 import com.jtspringproject.JtSpringProject.dao.cartDao;
 import com.jtspringproject.JtSpringProject.models.Cart;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
 public class cartService {
+    private static final Logger logger = LoggerFactory.getLogger(cartService.class);
+
     private final cartDao cartDao;
 
     @Autowired
@@ -18,18 +22,22 @@ public class cartService {
     }
 
     public Cart addCart(Cart cart) {
+        logger.debug("Adding cart");
         return cartDao.addCart(cart);
     }
 
     public List<Cart> getCarts() {
+        logger.debug("Fetching all carts");
         return this.cartDao.getCarts();
     }
 
     public void updateCart(Cart cart) {
+        logger.debug("Updating cart");
         cartDao.updateCart(cart);
     }
 
     public void deleteCart(Cart cart) {
+        logger.debug("Deleting cart");
         cartDao.deleteCart(cart);
     }
 }

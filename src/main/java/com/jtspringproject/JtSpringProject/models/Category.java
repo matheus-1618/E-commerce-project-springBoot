@@ -6,8 +6,12 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Entity(name="CATEGORY")
 public class Category {
+	private static final Logger logger = LoggerFactory.getLogger(Category.class);
 	@Id
 	@Column(name = "category_id")
 	@GeneratedValue(strategy=GenerationType.AUTO)

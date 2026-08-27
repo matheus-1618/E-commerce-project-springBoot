@@ -4,6 +4,8 @@ import java.util.List;
 
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -11,6 +13,8 @@ import com.jtspringproject.JtSpringProject.models.Category;
 
 @Repository
 public class categoryDao {
+	private static final Logger logger = LoggerFactory.getLogger(categoryDao.class);
+
 	private final SessionFactory sessionFactory;
 
 	public categoryDao(SessionFactory sessionFactory) {
@@ -19,6 +23,7 @@ public class categoryDao {
 
 	@Transactional
 	public Category addCategory(String name) {
+		logger.debug("Creating category name={}", name);
 		Category category = new Category();
 		category.setName(name);
 		this.sessionFactory.getCurrentSession().saveOrUpdate(category);
@@ -27,11 +32,13 @@ public class categoryDao {
 
 	@Transactional
 	public List<Category> getCategories() {
+		logger.debug("Retrieving all categories");
 		return this.sessionFactory.getCurrentSession().createQuery("from CATEGORY", Category.class).list();
 	}
 
 	@Transactional
 	public Boolean deleteCategory(int id) {
+		logger.debug("Deleting category id={}", id);
 		Session session = this.sessionFactory.getCurrentSession();
 		Category category = session.get(Category.class, id);
 
@@ -39,13 +46,16 @@ public class categoryDao {
 			session.delete(category);
 			return true;
 		}
+		logger.debug("Category id={} not found for deletion", id);
 		return false;
 	}
 
 	@Transactional
 	public Category updateCategory(int id, String name) {
+		logger.debug("Updating category id={} to name={}", id, name);
 		Category category = this.sessionFactory.getCurrentSession().get(Category.class, id);
 		if (category == null) {
+			logger.warn("Category id={} not found for update", id);
 			return null;
 		}
 		category.setName(name);
@@ -56,6 +66,7 @@ public class categoryDao {
 
 	@Transactional
 	public Category getCategory(int id) {
+		logger.debug("Fetching category id={}", id);
 		return this.sessionFactory.getCurrentSession().get(Category.class, id);
 	}
 }

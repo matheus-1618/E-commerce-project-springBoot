@@ -7,8 +7,12 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Entity(name = "CART")
 public class Cart {
+    private static final Logger logger = LoggerFactory.getLogger(Cart.class);
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
