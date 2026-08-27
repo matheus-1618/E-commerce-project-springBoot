@@ -17,6 +17,7 @@ import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfi
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.stereotype.Controller;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.validation.BindException;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -49,6 +50,10 @@ import com.jtspringproject.JtSpringProject.services.userService;
         SecurityAutoConfiguration.class
     }
 )
+@TestPropertySource(properties = {
+    "spring.mvc.throw-exception-if-no-handler-found=true",
+    "spring.web.resources.add-mappings=false"
+})
 class GlobalExceptionHandlerTest {
 
     static final String SENTINEL_NOT_FOUND = "SENTINEL_NOT_FOUND_12345";
@@ -184,5 +189,33 @@ class GlobalExceptionHandlerTest {
         mockMvc.perform(get("/test/server-error"))
                 .andExpect(status().isInternalServerError())
                 .andExpect(content().string(not(containsString(SENTINEL_INTERNAL))));
+    }
+
+    // ---------------------------------------------------------------------------
+    // Tests — NoHandlerFoundException (FR-04, story-not-found-unmapped-url)
+    // ---------------------------------------------------------------------------
+
+    /**
+     * A request to a URL with no handler mapping must yield HTTP 404 and route to
+     * the 404 view via NoHandlerFoundException (requires throw-exception-if-no-handler-found=true
+     * and add-mappings=false).
+     */
+    @Test
+    void handleNoHandlerFound_returns404StatusAndView() throws Exception {
+        mockMvc.perform(get("/nonexistent-unmapped-path"))
+                .andExpect(status().isNotFound())
+                .andExpect(view().name("404"));
+    }
+
+    /**
+     * The NoHandlerFoundException handler must NOT leak exception class name or
+     * request path in the HTTP response body — CWE-209 compliance.
+     */
+    @Test
+    void handleNoHandlerFound_doesNotLeakExceptionDetailsInResponseBody() throws Exception {
+        mockMvc.perform(get("/nonexistent-unmapped-path"))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string(not(containsString("NoHandlerFoundException"))))
+                .andExpect(content().string(not(containsString("/nonexistent-unmapped-path"))));
     }
 }
