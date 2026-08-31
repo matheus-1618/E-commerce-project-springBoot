@@ -84,6 +84,20 @@
     <div class="container">
       <h1>Welcome to Perishable Shop</h1>
 
+      <div class="btn-group mb-3" role="group" aria-label="Sort options" data-testid="sort-controls">
+        <a href="?page=0&size=${pageSize}&sort=name,asc"
+           class="btn btn-sm ${sortField == 'name' && sortDirection == 'asc' ? 'btn-primary' : 'btn-outline-primary'}"
+           data-testid="sort-name-asc">Name A-Z</a>
+        <a href="?page=0&size=${pageSize}&sort=name,desc"
+           class="btn btn-sm ${sortField == 'name' && sortDirection == 'desc' ? 'btn-primary' : 'btn-outline-primary'}"
+           data-testid="sort-name-desc">Name Z-A</a>
+        <a href="?page=0&size=${pageSize}&sort=price,asc"
+           class="btn btn-sm ${sortField == 'price' && sortDirection == 'asc' ? 'btn-primary' : 'btn-outline-primary'}"
+           data-testid="sort-price-asc">Price Low-High</a>
+        <a href="?page=0&size=${pageSize}&sort=price,desc"
+           class="btn btn-sm ${sortField == 'price' && sortDirection == 'desc' ? 'btn-primary' : 'btn-outline-primary'}"
+           data-testid="sort-price-desc">Price High-Low</a>
+      </div>
 
       <div class="row">
       <c:forEach var="product" items="${products}">
@@ -100,6 +114,33 @@
           </div>
         </div> </c:forEach>
       </div>
+
+      <c:if test="${totalPages > 0}">
+      <div class="d-flex justify-content-between align-items-center mt-3 mb-3" data-testid="pagination-controls">
+        <span class="text-muted">Showing ${startItem}&ndash;${endItem} of ${totalElements}</span>
+        <nav aria-label="Page navigation">
+          <ul class="pagination mb-0">
+            <li class="page-item ${currentPage == 0 ? 'disabled' : ''}">
+              <a class="page-link" href="?page=0&size=${pageSize}&sort=${sortField},${sortDirection}">First</a>
+            </li>
+            <li class="page-item ${!hasPrevious ? 'disabled' : ''}">
+              <a class="page-link" href="?page=${currentPage - 1}&size=${pageSize}&sort=${sortField},${sortDirection}">Previous</a>
+            </li>
+            <c:forEach var="i" begin="${pageStart}" end="${pageEnd}">
+              <li class="page-item ${i == currentPage ? 'active' : ''}">
+                <a class="page-link" href="?page=${i}&size=${pageSize}&sort=${sortField},${sortDirection}">${i + 1}</a>
+              </li>
+            </c:forEach>
+            <li class="page-item ${!hasNext ? 'disabled' : ''}">
+              <a class="page-link" href="?page=${currentPage + 1}&size=${pageSize}&sort=${sortField},${sortDirection}">Next</a>
+            </li>
+            <li class="page-item ${currentPage == totalPages - 1 ? 'disabled' : ''}">
+              <a class="page-link" href="?page=${totalPages - 1}&size=${pageSize}&sort=${sortField},${sortDirection}">Last</a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+      </c:if>
 
     </div>
   </main>

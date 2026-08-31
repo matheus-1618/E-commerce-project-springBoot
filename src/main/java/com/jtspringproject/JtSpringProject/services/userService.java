@@ -1,6 +1,9 @@
 package com.jtspringproject.JtSpringProject.services;
 
+import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -8,10 +11,15 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.jtspringproject.JtSpringProject.dao.userDao;
+import com.jtspringproject.JtSpringProject.models.PageResult;
+import com.jtspringproject.JtSpringProject.models.PaginationRequest;
 import com.jtspringproject.JtSpringProject.models.User;
 
 @Service
 public class userService {
+	private static final Set<String> CUSTOMER_SORT_FIELDS = new LinkedHashSet<>(Arrays.asList("username", "email", "id"));
+	private static final String DEFAULT_CUSTOMER_SORT = "username";
+
 	private final userDao userDao;
 	private final PasswordEncoder passwordEncoder;
 
@@ -23,6 +31,11 @@ public class userService {
 
 	public List<User> getUsers() {
 		return this.userDao.getAllUser();
+	}
+
+	public PageResult<User> getUsers(int page, int size, String sort) {
+		PaginationRequest request = PaginationRequest.of(page, size, sort, CUSTOMER_SORT_FIELDS, DEFAULT_CUSTOMER_SORT);
+		return this.userDao.getAllUser(request);
 	}
 
 	public User addUser(User user) {

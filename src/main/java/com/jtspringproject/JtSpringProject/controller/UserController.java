@@ -1,9 +1,8 @@
 package com.jtspringproject.JtSpringProject.controller;
 
+import com.jtspringproject.JtSpringProject.models.PageResult;
 import com.jtspringproject.JtSpringProject.models.Product;
 import com.jtspringproject.JtSpringProject.models.User;
-
-import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -52,33 +51,36 @@ public class UserController {
 	}
 
 	@GetMapping("/")
-	public ModelAndView indexPage() {
+	public ModelAndView indexPage(
+			@RequestParam(defaultValue = "0") int page,
+			@RequestParam(defaultValue = "20") int size,
+			@RequestParam(defaultValue = "name,asc") String sort) {
 		ModelAndView mView = new ModelAndView("index");
 		String username = SecurityContextHolder.getContext().getAuthentication().getName();
 		mView.addObject("username", username);
-		List<Product> products = this.productService.getProducts();
+		PageResult<Product> result = this.productService.getProducts(page, size, sort);
 
-		if (products.isEmpty()) {
+		if (result.isEmpty() && result.getTotalElements() == 0) {
 			mView.addObject("msg", "No products are available");
-		} else {
-			mView.addObject("products", products);
 		}
+		addPaginationAttributes(mView, result);
+		mView.addObject("products", result.getContent());
 		return mView;
 	}
 
 	@GetMapping("/user/products")
-	public ModelAndView getProducts() {
-
+	public ModelAndView getProducts(
+			@RequestParam(defaultValue = "0") int page,
+			@RequestParam(defaultValue = "20") int size,
+			@RequestParam(defaultValue = "name,asc") String sort) {
 		ModelAndView mView = new ModelAndView("uproduct");
+		PageResult<Product> result = this.productService.getProducts(page, size, sort);
 
-		List<Product> products = this.productService.getProducts();
-
-		if (products.isEmpty()) {
+		if (result.isEmpty() && result.getTotalElements() == 0) {
 			mView.addObject("msg", "No products are available");
-		} else {
-			mView.addObject("products", products);
 		}
-
+		addPaginationAttributes(mView, result);
+		mView.addObject("products", result.getContent());
 		return mView;
 	}
 
@@ -127,6 +129,27 @@ public class UserController {
 			refreshAuthenticatedPrincipal(username);
 		}
 		return "redirect:/";
+	}
+
+	private void addPaginationAttributes(ModelAndView mView, PageResult<?> result) {
+		mView.addObject("currentPage", result.getCurrentPage());
+		mView.addObject("totalPages", result.getTotalPages());
+		mView.addObject("totalElements", result.getTotalElements());
+		mView.addObject("pageSize", result.getPageSize());
+		mView.addObject("sortField", result.getSortField());
+		mView.addObject("sortDirection", result.getSortDirection());
+		mView.addObject("hasNext", result.isHasNext());
+		mView.addObject("hasPrevious", result.isHasPrevious());
+		mView.addObject("startItem", result.getStartItem());
+		mView.addObject("endItem", result.getEndItem());
+
+		int pageStart = Math.max(0, result.getCurrentPage() - 2);
+		int pageEnd = Math.min(result.getTotalPages() - 1, pageStart + 4);
+		if (pageEnd - pageStart < 4) {
+			pageStart = Math.max(0, pageEnd - 4);
+		}
+		mView.addObject("pageStart", pageStart);
+		mView.addObject("pageEnd", pageEnd);
 	}
 
 	private void refreshAuthenticatedPrincipal(String username) {
