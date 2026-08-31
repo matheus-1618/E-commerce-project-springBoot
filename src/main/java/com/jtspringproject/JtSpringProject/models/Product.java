@@ -10,8 +10,12 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Entity(name="PRODUCT")
 public class Product {
+	private static final Logger logger = LoggerFactory.getLogger(Product.class);
 	@Id
 	@Column(name = "product_id")
 	@GeneratedValue(strategy=GenerationType.AUTO)

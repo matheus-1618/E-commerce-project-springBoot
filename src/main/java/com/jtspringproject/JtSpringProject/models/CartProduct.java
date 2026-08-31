@@ -2,9 +2,13 @@ package com.jtspringproject.JtSpringProject.models;
 
 import javax.persistence.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Entity
 @Table(name = "CART_PRODUCT")
 public class CartProduct {
+    private static final Logger logger = LoggerFactory.getLogger(CartProduct.class);
 
     @EmbeddedId
     private CartProductId id;

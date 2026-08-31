@@ -5,6 +5,8 @@ import com.jtspringproject.JtSpringProject.models.User;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -22,6 +24,7 @@ import com.jtspringproject.JtSpringProject.services.productService;
 
 @Controller
 public class UserController {
+	private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
 	private final userService userService;
 	private final productService productService;
@@ -34,16 +37,19 @@ public class UserController {
 
 	@GetMapping("/register")
 	public String registerUser() {
+		logger.info("Registration page requested");
 		return "register";
 	}
 
 	@GetMapping("/buy")
 	public String buy() {
+		logger.info("Buy page requested");
 		return "buy";
 	}
 
 	@GetMapping("/login")
 	public ModelAndView userLogin(@RequestParam(required = false) String error) {
+		logger.info("User login page requested");
 		ModelAndView mv = new ModelAndView("userLogin");
 		if ("true".equals(error)) {
 			mv.addObject("msg", "Please enter correct email and password");
@@ -55,6 +61,7 @@ public class UserController {
 	public ModelAndView indexPage() {
 		ModelAndView mView = new ModelAndView("index");
 		String username = SecurityContextHolder.getContext().getAuthentication().getName();
+		logger.info("User index accessed by user={}", username);
 		mView.addObject("username", username);
 		List<Product> products = this.productService.getProducts();
 
@@ -68,7 +75,7 @@ public class UserController {
 
 	@GetMapping("/user/products")
 	public ModelAndView getProducts() {
-
+		logger.info("User listing products");
 		ModelAndView mView = new ModelAndView("uproduct");
 
 		List<Product> products = this.productService.getProducts();
@@ -84,6 +91,7 @@ public class UserController {
 
 	@PostMapping("newuserregister")
 	public ModelAndView registerNewUser(@ModelAttribute User user) {
+		logger.info("New user registration attempt username={}", user.getUsername());
 		boolean exists = this.userService.checkUserExists(user.getUsername());
 
 		if (!exists) {
@@ -91,6 +99,7 @@ public class UserController {
 			this.userService.addUser(user);
 			return new ModelAndView("userLogin");
 		} else {
+			logger.warn("Registration rejected — username already taken: {}", user.getUsername());
 			ModelAndView mView = new ModelAndView("register");
 			mView.addObject("msg", user.getUsername() + " is taken. Please choose a different username.");
 			return mView;
@@ -99,8 +108,8 @@ public class UserController {
 
 	@GetMapping("/profileDisplay")
 	public String profileDisplay(Model model) {
-
 		String username = SecurityContextHolder.getContext().getAuthentication().getName();
+		logger.info("User viewing profile username={}", username);
 		User user = userService.getUserByUsername(username);
 
 		if (user != null) {
@@ -122,6 +131,7 @@ public class UserController {
 			@RequestParam("email") String email,
 			@RequestParam("password") String password,
 			@RequestParam("address") String address) {
+		logger.info("User updating profile userid={}", userid);
 		User updatedUser = this.userService.updateUserProfile(userid, username, email, password, address);
 		if (updatedUser != null) {
 			refreshAuthenticatedPrincipal(username);
