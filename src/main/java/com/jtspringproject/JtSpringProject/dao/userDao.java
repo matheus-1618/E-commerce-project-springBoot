@@ -57,7 +57,7 @@ public class userDao {
 		try {
 			return query.getSingleResult();
 		} catch (NoResultException e) {
-			logger.debug("No user found for username={}", username);
+			logger.debug("No user found for username={}", username, e);
 			return null;
 		}
 	}
