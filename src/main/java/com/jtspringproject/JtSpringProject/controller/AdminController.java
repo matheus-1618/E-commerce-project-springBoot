@@ -2,6 +2,8 @@ package com.jtspringproject.JtSpringProject.controller;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -25,6 +27,7 @@ import com.jtspringproject.JtSpringProject.services.userService;
 @Controller
 @RequestMapping("/admin")
 public class AdminController {
+	private static final Logger logger = LoggerFactory.getLogger(AdminController.class);
 
 	private final userService userService;
 	private final categoryService categoryService;
@@ -43,12 +46,14 @@ public class AdminController {
 	@GetMapping("/index")
 	public String index(Model model) {
 		String username = SecurityContextHolder.getContext().getAuthentication().getName();
+		logger.info("Admin index accessed by user={}", username);
 		model.addAttribute("username", username);
 		return "index";
 	}
 
 	@GetMapping("login")
 	public ModelAndView adminLogin(@RequestParam(required = false) String error) {
+		logger.info("Admin login page requested");
 		ModelAndView mv = new ModelAndView("adminlogin");
 		if ("true".equals(error)) {
 			mv.addObject("msg", "Invalid username or password. Please try again.");
@@ -59,6 +64,7 @@ public class AdminController {
 	@GetMapping(value = { "/", "Dashboard" })
 	public ModelAndView adminHome() {
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		logger.info("Admin dashboard accessed by admin={}", authentication.getName());
 		ModelAndView mv = new ModelAndView("adminHome");
 		mv.addObject("admin", authentication.getName());
 		return mv;
@@ -66,6 +72,7 @@ public class AdminController {
 
 	@GetMapping("categories")
 	public ModelAndView getCategories() {
+		logger.info("Admin listing categories");
 		ModelAndView mView = new ModelAndView(VIEW_CATEGORIES);
 		List<Category> categories = this.categoryService.getCategories();
 		mView.addObject(VIEW_CATEGORIES, categories);
@@ -74,12 +81,14 @@ public class AdminController {
 
 	@PostMapping("/categories")
 	public String addCategory(@RequestParam("categoryname") String categoryName) {
+		logger.info("Admin adding category name={}", categoryName);
 		this.categoryService.addCategory(categoryName);
 		return "redirect:categories";
 	}
 
 	@PostMapping("categories/delete")
 	public String deleteCategory(@RequestParam("id") int id) {
+		logger.info("Admin deleting category id={}", id);
 		this.categoryService.deleteCategory(id);
 		return REDIRECT_ADMIN_CATEGORIES;
 	}
@@ -87,12 +96,14 @@ public class AdminController {
 	@PostMapping("categories/update")
 	public String updateCategory(@RequestParam("categoryid") int id,
 			@RequestParam("categoryname") String categoryname) {
+		logger.info("Admin updating category id={}", id);
 		this.categoryService.updateCategory(id, categoryname);
 		return REDIRECT_ADMIN_CATEGORIES;
 	}
 
 	@GetMapping("products")
 	public ModelAndView getProducts() {
+		logger.info("Admin listing products");
 		ModelAndView mView = new ModelAndView("products");
 
 		List<Product> products = this.productService.getProducts();
@@ -118,6 +129,7 @@ public class AdminController {
 			@RequestParam("price") int price, @RequestParam("weight") int weight,
 			@RequestParam("quantity") int quantity, @RequestParam("description") String description,
 			@RequestParam("productImage") String productImage) {
+		logger.info("Admin adding product name={}", name);
 		Product product = buildProduct(name, categoryId, price, weight, quantity, description, productImage);
 		this.productService.addProduct(product);
 		return REDIRECT_ADMIN_PRODUCTS;
@@ -125,7 +137,7 @@ public class AdminController {
 
 	@GetMapping("products/update/{id}")
 	public ModelAndView getUpdateProductPage(@PathVariable("id") int id) {
-
+		logger.info("Admin viewing product update page id={}", id);
 		ModelAndView mView = new ModelAndView("productsUpdate");
 		Product product = this.productService.getProduct(id);
 		List<Category> categories = this.categoryService.getCategories();
@@ -140,6 +152,7 @@ public class AdminController {
 			@RequestParam("categoryid") int categoryId, @RequestParam("price") int price,
 			@RequestParam("weight") int weight, @RequestParam("quantity") int quantity,
 			@RequestParam("description") String description, @RequestParam("productImage") String productImage) {
+		logger.info("Admin updating product id={}", id);
 		Product product = buildProduct(name, categoryId, price, weight, quantity, description, productImage);
 		this.productService.updateProduct(id, product);
 		return REDIRECT_ADMIN_PRODUCTS;
@@ -147,6 +160,7 @@ public class AdminController {
 
 	@PostMapping("products/delete")
 	public String removeProduct(@RequestParam("id") int id) {
+		logger.info("Admin deleting product id={}", id);
 		this.productService.deleteProduct(id);
 		return REDIRECT_ADMIN_PRODUCTS;
 	}
@@ -158,6 +172,7 @@ public class AdminController {
 
 	@GetMapping("customers")
 	public ModelAndView getCustomerDetail() {
+		logger.info("Admin viewing customer list");
 		ModelAndView mView = new ModelAndView("displayCustomers");
 		List<User> users = this.userService.getUsers();
 		mView.addObject("customers", users);
@@ -167,6 +182,7 @@ public class AdminController {
 	@GetMapping("profileDisplay")
 	public String profileDisplay(Model model) {
 		String username = SecurityContextHolder.getContext().getAuthentication().getName();
+		logger.info("Admin viewing profile username={}", username);
 		User user = this.userService.getUserByUsername(username);
 
 		if (user != null) {
@@ -185,6 +201,7 @@ public class AdminController {
 	public String updateUserProfile(@RequestParam("userid") int userid, @RequestParam("username") String username,
 			@RequestParam("email") String email, @RequestParam("password") String password,
 			@RequestParam("address") String address) {
+		logger.info("Admin updating profile userid={}", userid);
 		User updatedUser = this.userService.updateUserProfile(userid, username, email, password, address);
 		if (updatedUser != null) {
 			refreshAuthenticatedPrincipal(username);

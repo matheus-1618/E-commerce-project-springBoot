@@ -5,8 +5,12 @@ import javax.persistence.Embeddable;
 import java.io.Serializable;
 import java.util.Objects;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Embeddable
 public class CartProductId implements Serializable {
+    private static final Logger logger = LoggerFactory.getLogger(CartProductId.class);
 
     @Column(name = "cart_id")
     private Integer cartId;

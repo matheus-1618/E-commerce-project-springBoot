@@ -1,5 +1,7 @@
 package com.jtspringproject.JtSpringProject.configuration;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -14,6 +16,7 @@ import com.jtspringproject.JtSpringProject.services.userService;
 
 @Configuration
 public class SecurityConfiguration {
+	private static final Logger logger = LoggerFactory.getLogger(SecurityConfiguration.class);
 
 	private final userService userService;
 
@@ -24,9 +27,11 @@ public class SecurityConfiguration {
 	@Configuration
 	@Order(1)
 	public static class AdminConfigurationAdapter {
+		private static final Logger logger = LoggerFactory.getLogger(AdminConfigurationAdapter.class);
 
 		@Bean
 		SecurityFilterChain adminFilterChain(HttpSecurity http) throws Exception {
+			logger.info("Configuring admin security filter chain (order=1)");
 			http.antMatcher("/admin/**")
 					.authorizeHttpRequests(requests -> requests
 							.requestMatchers(new AntPathRequestMatcher("/admin/login")).permitAll()
@@ -54,9 +59,11 @@ public class SecurityConfiguration {
 	@Configuration
 	@Order(2)
 	public static class UserConfigurationAdapter {
+		private static final Logger logger = LoggerFactory.getLogger(UserConfigurationAdapter.class);
 
 		@Bean
 		SecurityFilterChain userFilterChain(HttpSecurity http) throws Exception {
+			logger.info("Configuring user security filter chain (order=2)");
 			http.authorizeHttpRequests(requests -> requests
 					.antMatchers("/login", "/register", "/newuserregister").permitAll()
 					.antMatchers("/**").hasRole("USER"))

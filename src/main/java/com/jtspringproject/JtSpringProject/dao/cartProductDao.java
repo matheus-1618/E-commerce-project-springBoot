@@ -7,11 +7,15 @@ import com.jtspringproject.JtSpringProject.models.CartProduct;
 import com.jtspringproject.JtSpringProject.models.Product;
 
 import org.hibernate.SessionFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 @Repository
 public class cartProductDao {
+    private static final Logger logger = LoggerFactory.getLogger(cartProductDao.class);
+
     private final SessionFactory sessionFactory;
 
     public cartProductDao(SessionFactory sessionFactory) {
@@ -20,17 +24,20 @@ public class cartProductDao {
 
     @Transactional
     public CartProduct addCartProduct(CartProduct cartProduct) {
+        logger.debug("Adding product to cart");
         this.sessionFactory.getCurrentSession().save(cartProduct);
         return cartProduct;
     }
 
     @Transactional
     public List<CartProduct> getCartProducts() {
+        logger.debug("Retrieving all cart-product associations");
         return this.sessionFactory.getCurrentSession().createQuery("from CART_PRODUCT", CartProduct.class).list();
     }
 
     @Transactional
     public List<Product> getProductByCartID(Integer cart_id) {
+        logger.debug("Fetching products for cart id={}", cart_id);
         String sql = "SELECT product_id FROM cart_product WHERE cart_id = :cart_id";
         List<Integer> productIds = this.sessionFactory.getCurrentSession()
                 .createNativeQuery(sql)
@@ -50,11 +57,13 @@ public class cartProductDao {
 
     @Transactional
     public void updateCartProduct(CartProduct cartProduct) {
+        logger.debug("Updating cart-product association");
         this.sessionFactory.getCurrentSession().update(cartProduct);
     }
 
     @Transactional
     public void deleteCartProduct(CartProduct cartProduct) {
+        logger.debug("Removing product from cart");
         this.sessionFactory.getCurrentSession().delete(cartProduct);
     }
 }
