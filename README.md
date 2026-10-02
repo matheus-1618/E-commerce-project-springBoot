@@ -110,15 +110,20 @@ db.password=your_db_password
 
 hibernate.dialect=org.hibernate.dialect.MySQL5Dialect
 hibernate.show_sql=true
-hibernate.hbm2ddl.auto=update
+hibernate.hbm2ddl.auto=validate
 entitymanager.packagesToScan=com
 ```
 
-### 3) Optional: seed sample data
+### 3) Schema and seed data (automatic)
 
-Run `basedata.sql` against your database if you want initial categories/users/products.
+**No manual SQL import is needed.** Flyway runs automatically on startup and applies the versioned migrations under `src/main/resources/db/migration/`:
 
-Note: sample credentials in `basedata.sql` are development-only defaults.
+- `V1__Create_schema.sql` — creates all five tables (CATEGORY, CUSTOMER, PRODUCT, CART, CART_PRODUCT)
+- `V2__Seed_data.sql` — inserts default categories, users, and products
+
+The database URL uses `createDatabaseIfNotExist=true`, so MySQL creates the schema on first connect if it does not exist.
+
+**Upgrading an existing local database:** If you already have a local database created from a previous version of `basedata.sql`, Flyway's `baseline-on-migrate=true` configuration will detect the absence of a `flyway_schema_history` table and baseline it at version 2, marking V1 and V2 as already applied. Your existing data is preserved and no SQL will be re-executed.
 
 ### 4) Run the app
 
