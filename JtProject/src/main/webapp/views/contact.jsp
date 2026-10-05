@@ -31,7 +31,7 @@
         </button>
 		
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
-        <h4>Welcome ${ username } </h4>
+        <h4>Welcome <c:out value="${ username }"/> </h4>
             <ul class="navbar-nav mr-auto"></ul>
             <ul class="navbar-nav">
                 <li class="nav-item active">
