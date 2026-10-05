@@ -15,6 +15,12 @@
 	<description>Spring project for Java Technology</description>
 	<properties>
 		<java.version>17</java.version>
+		<!-- Pinned to fix CVE-2026-41850, CVE-2026-41842, CVE-2026-41845 -->
+		<spring-framework.version>6.2.19</spring-framework.version>
+		<!-- Pinned to fix CVE-2026-41293, CVE-2026-43512, CVE-2026-43515, CVE-2026-65182, CVE-2026-65905, CVE-2026-68525 -->
+		<tomcat.version>10.1.60</tomcat.version>
+		<!-- Pinned to fix CVE-2026-91776, CVE-2026-91777, CVE-2026-54512, CVE-2026-54513, CVE-2026-68494, CVE-2026-68497, CVE-2026-89407, CVE-2026-89425 -->
+		<jackson-bom.version>2.21.7</jackson-bom.version>
 	</properties>
 	<dependencies>
 

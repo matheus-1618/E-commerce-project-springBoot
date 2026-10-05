@@ -1,17 +1,20 @@
 package com.jtspringproject.JtSpringProject.controller;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.Statement;
 
+import javax.sql.DataSource;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 @Controller
 public class UserController{
+
+	@Autowired
+	private DataSource dataSource;
 
 	@GetMapping("/register")
 	public String registerUser()
@@ -28,7 +31,7 @@ public class UserController{
 	{
 		return "buy";
 	}
-	
+
 	@GetMapping("/user/products")
 	public String getproduct(Model model) {
 		return "uproduct";
@@ -38,17 +41,15 @@ public class UserController{
 	{
 		try
 		{
-			Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/springproject","root","");
+			Connection con = dataSource.getConnection();
 			PreparedStatement pst = con.prepareStatement("insert into users(username,password,email) values(?,?,?);");
 			pst.setString(1,username);
 			pst.setString(2, password);
 			pst.setString(3, email);
-			
 
-			//pst.setString(4, address);
 			int i = pst.executeUpdate();
 			System.out.println("data base updated"+i);
-			
+
 		}
 		catch(Exception e)
 		{
