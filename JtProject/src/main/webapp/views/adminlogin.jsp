@@ -1,3 +1,4 @@
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <!doctype html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
@@ -31,7 +32,7 @@
                 </div><br>
 
                 <input type="submit" value="Login" class="btn btn-primary btn-block">
-                <br><h3 style="color:red;">${message }</h3>
+                <br><h3 style="color:red;"><c:out value="${message }"/></h3>
                 <br>
         </div>
 
